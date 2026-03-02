@@ -1,0 +1,267 @@
+"use client";
+
+import { create } from "zustand";
+import type {
+  ChatMessage,
+  EvidenceItem,
+  GraphEdge,
+  GraphNode,
+  PharmaReportItem,
+  SessionDetail,
+  SessionSummary,
+  TabKey,
+  TabStatus
+} from "@contracts/types";
+
+export interface SessionState {
+  id: string;
+  userId: string;
+  title: string;
+  messages: ChatMessage[];
+  tabStatus: Record<TabKey, TabStatus>;
+  activeTab: TabKey;
+  evidence: EvidenceItem[];
+  graphNodes: GraphNode[];
+  graphEdges: GraphEdge[];
+  pharma: PharmaReportItem[];
+  isStreaming: boolean;
+  error?: string;
+}
+
+interface ChatSessionStore {
+  sessions: SessionSummary[];
+  activeSession: SessionState | null;
+  setSessions: (sessions: SessionSummary[]) => void;
+  upsertSessionSummary: (session: SessionSummary) => void;
+  removeSession: (sessionId: string) => void;
+  setActiveSession: (session: SessionDetail) => void;
+  clearActiveSession: () => void;
+  startQuery: (query: string) => void;
+  appendAnswerToken: (token: string) => void;
+  setEvidence: (references: SessionState["evidence"]) => void;
+  setGraph: (nodes: SessionState["graphNodes"], edges: SessionState["graphEdges"]) => void;
+  setPharma: (items: SessionState["pharma"]) => void;
+  completeStream: () => void;
+  setActiveTab: (tab: TabKey) => void;
+  setError: (message: string) => void;
+}
+
+const defaultTabStatus = (): Record<TabKey, TabStatus> => ({
+  chat: "complete",
+  answer: "loading",
+  evidence: "loading",
+  graph: "loading",
+  pharma: "loading"
+});
+
+const markLoadingTabsAsError = (
+  tabStatus: Record<TabKey, TabStatus>
+): Record<TabKey, TabStatus> => ({
+  chat: tabStatus.chat,
+  answer: tabStatus.answer === "loading" ? "error" : tabStatus.answer,
+  evidence: tabStatus.evidence === "loading" ? "error" : tabStatus.evidence,
+  graph: tabStatus.graph === "loading" ? "error" : tabStatus.graph,
+  pharma: tabStatus.pharma === "loading" ? "error" : tabStatus.pharma
+});
+
+const buildSessionState = (session: SessionDetail): SessionState => {
+  const tabStatus: Record<TabKey, TabStatus> = {
+    chat: session.messages.length ? "complete" : "idle",
+    answer: session.messages.length ? "complete" : "idle",
+    evidence: session.evidence.length ? "complete" : "idle",
+    graph: session.graphNodes.length || session.graphEdges.length ? "complete" : "idle",
+    pharma: session.pharma.length ? "complete" : "idle"
+  };
+
+  return {
+    id: session.id,
+    userId: session.userId,
+    title: session.title,
+    messages: session.messages,
+    tabStatus,
+    evidence: session.evidence,
+    graphNodes: session.graphNodes,
+    graphEdges: session.graphEdges,
+    pharma: session.pharma,
+    isStreaming: false,
+    activeTab: "chat"
+  };
+};
+
+export const useChatSessionStore = create<ChatSessionStore>((set) => ({
+  sessions: [],
+  activeSession: null,
+  setSessions: (sessions) => set(() => ({ sessions })),
+  upsertSessionSummary: (session) =>
+    set((state) => {
+      const existing = state.sessions.find((item) => item.id === session.id);
+      const sessions = existing
+        ? state.sessions.map((item) => (item.id === session.id ? session : item))
+        : [session, ...state.sessions];
+      return { sessions };
+    }),
+  removeSession: (sessionId) =>
+    set((state) => {
+      const sessions = state.sessions.filter((s) => s.id !== sessionId);
+      const wasActive = state.activeSession?.id === sessionId;
+      return {
+        sessions,
+        activeSession: wasActive ? null : state.activeSession
+      };
+    }),
+  setActiveSession: (session) =>
+    set(() => ({
+      activeSession: buildSessionState(session)
+    })),
+  clearActiveSession: () =>
+    set(() => ({
+      activeSession: null
+    })),
+  startQuery: (query) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+
+      const userMessage: ChatMessage = {
+        id: `u-${Date.now()}`,
+        role: "user",
+        content: query,
+        createdAt: new Date().toISOString()
+      };
+      const assistantMessage: ChatMessage = {
+        id: `a-${Date.now()}`,
+        role: "assistant",
+        content: "",
+        createdAt: new Date().toISOString()
+      };
+
+      return {
+        activeSession: {
+          ...state.activeSession,
+          messages: [...state.activeSession.messages, userMessage, assistantMessage],
+          tabStatus: defaultTabStatus(),
+          activeTab: "chat",
+          evidence: [],
+          graphNodes: [],
+          graphEdges: [],
+          pharma: [],
+          isStreaming: true,
+          error: undefined
+        }
+      };
+    }),
+  appendAnswerToken: (token) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+
+      const messages = [...state.activeSession.messages];
+      const idx = messages.length - 1;
+      if (idx < 0 || messages[idx].role !== "assistant") {
+        return state;
+      }
+
+      messages[idx] = {
+        ...messages[idx],
+        content: `${messages[idx].content}${token}`
+      };
+
+      return {
+        activeSession: {
+          ...state.activeSession,
+          messages,
+          tabStatus: { ...state.activeSession.tabStatus, answer: "loading" }
+        }
+      };
+    }),
+  setEvidence: (references) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          evidence: references,
+          tabStatus: { ...state.activeSession.tabStatus, evidence: "complete" }
+        }
+      };
+    }),
+  setGraph: (nodes, edges) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          graphNodes: nodes,
+          graphEdges: edges,
+          tabStatus: { ...state.activeSession.tabStatus, graph: "complete" }
+        }
+      };
+    }),
+  setPharma: (items) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          pharma: items,
+          tabStatus: { ...state.activeSession.tabStatus, pharma: "complete" }
+        }
+      };
+    }),
+  completeStream: () =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          isStreaming: false,
+          tabStatus: {
+            ...state.activeSession.tabStatus,
+            answer: "complete"
+          }
+        }
+      };
+    }),
+  setActiveTab: (tab) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          activeTab: tab
+        }
+      };
+    }),
+  setError: (message) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          error: message,
+          isStreaming: false,
+          tabStatus: markLoadingTabsAsError(state.activeSession.tabStatus)
+        }
+      };
+    })
+}));
+
+export const getActiveSessionId = () => getStore().activeSession?.id;
+
+function getStore() {
+  return useChatSessionStore.getState();
+}

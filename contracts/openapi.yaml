@@ -1,0 +1,259 @@
+openapi: 3.1.0
+info:
+  title: Target Discovery Platform API
+  version: 0.1.0
+  description: Frontend-first contract for mock and future backend integration.
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/sessions:
+    get:
+      summary: List chat sessions
+      responses:
+        "200":
+          description: Session summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SessionSummary"
+    post:
+      summary: Create new chat session
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "200":
+          description: Created session detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/SessionDetail"
+  /api/sessions/{id}:
+    get:
+      summary: Get one chat session detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/SessionDetail"
+        "404":
+          description: Not found
+  /api/chat/stream:
+    post:
+      summary: Stream hybrid intelligence results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueryRequest"
+      responses:
+        "200":
+          description: SSE stream with progressive tab payloads
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                answer_delta:
+                  value: |
+                    event: answer.delta
+                    data: {"type":"answer.delta","seq":1,"sessionId":"session-123","timestamp":"2026-02-26T09:30:00.000Z","payload":{"token":"TP53 is highly relevant. "}}
+                evidence_ready:
+                  value: |
+                    event: evidence.ready
+                    data: {"type":"evidence.ready","seq":7,"sessionId":"session-123","timestamp":"2026-02-26T09:30:01.100Z","payload":{"references":[{"id":"ref-1","title":"...","source":"Nature","year":2024,"url":"https://example.org","summary":"..."}]}}
+                graph_ready:
+                  value: |
+                    event: graph.ready
+                    data: {"type":"graph.ready","seq":8,"sessionId":"session-123","timestamp":"2026-02-26T09:30:02.000Z","payload":{"nodes":[{"id":"TP53","label":"TP53","kind":"gene","score":0.93}],"edges":[]}}
+                pharma_ready:
+                  value: |
+                    event: pharma.ready
+                    data: {"type":"pharma.ready","seq":9,"sessionId":"session-123","timestamp":"2026-02-26T09:30:03.000Z","payload":{"items":[{"company":"AcmeBio","target":"TP53","stage":"phase2","indication":"Solid tumors","note":"..."}]}}
+                done:
+                  value: |
+                    event: done
+                    data: {"type":"done","seq":10,"sessionId":"session-123","timestamp":"2026-02-26T09:30:04.000Z","payload":{"completedAt":"2026-02-26T09:30:04.000Z"}}
+  /api/references/{id}:
+    get:
+      summary: Get one evidence detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reference detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferenceDetail"
+        "404":
+          description: Not found
+components:
+  schemas:
+    QueryRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        sessionId:
+          type: string
+    SessionSummary:
+      type: object
+      required: [id, userId, title, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    EvidenceItem:
+      type: object
+      required: [id, title, source, year, url, summary]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        source:
+          type: string
+        year:
+          type: integer
+        url:
+          type: string
+          format: uri
+        summary:
+          type: string
+    GraphNode:
+      type: object
+      required: [id, label, kind, score]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        kind:
+          type: string
+          enum: [gene, target, pathway]
+        score:
+          type: number
+    GraphEdge:
+      type: object
+      required: [source, target, relation, confidence]
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+        relation:
+          type: string
+        confidence:
+          type: number
+    PharmaReportItem:
+      type: object
+      required: [company, target, stage, indication, note]
+      properties:
+        company:
+          type: string
+        target:
+          type: string
+        stage:
+          type: string
+          enum: [discovery, preclinical, phase1, phase2, phase3, approved]
+        indication:
+          type: string
+        note:
+          type: string
+    ReferenceDetail:
+      type: object
+      required: [id, title, abstract, keyFindings]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        abstract:
+          type: string
+        keyFindings:
+          type: array
+          items:
+            type: string
+    ChatMessage:
+      type: object
+      required: [id, role, content, createdAt]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    SessionDetail:
+      allOf:
+        - $ref: "#/components/schemas/SessionSummary"
+        - type: object
+          required: [messages, evidence, graphNodes, graphEdges, pharma]
+          properties:
+            messages:
+              type: array
+              items:
+                $ref: "#/components/schemas/ChatMessage"
+            evidence:
+              type: array
+              items:
+                $ref: "#/components/schemas/EvidenceItem"
+            graphNodes:
+              type: array
+              items:
+                $ref: "#/components/schemas/GraphNode"
+            graphEdges:
+              type: array
+              items:
+                $ref: "#/components/schemas/GraphEdge"
+            pharma:
+              type: array
+              items:
+                $ref: "#/components/schemas/PharmaReportItem"
+    CreateSessionRequest:
+      type: object
+      properties:
+        title:
+          type: string

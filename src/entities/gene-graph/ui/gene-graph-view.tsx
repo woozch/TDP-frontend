@@ -135,8 +135,33 @@ type LayoutMode =
   | "radialin"
   | "radialout";
 
+type PersistedGraphSettings = {
+  layoutMode: LayoutMode;
+  nodeKindEnabled: Record<string, boolean>;
+  edgeTypeEnabled: Record<string, boolean>;
+  sourceCountRangeByType: Record<string, CountRange>;
+  destinationCountRangeByType: Record<string, CountRange>;
+  scoreRangeByType: Record<string, { min: number; max: number }>;
+  nodeNameFilterByKind: Record<string, string>;
+  nodeColorByKind: Record<string, string>;
+  draftSourceCountRangeByType: Record<string, CountRange>;
+  draftDestinationCountRangeByType: Record<string, CountRange>;
+  draftScoreRangeByType: Record<string, { min: number; max: number }>;
+  draftNodeNameFilterByKind: Record<string, string>;
+  draftNodeColorByKind: Record<string, string>;
+};
+
+const GRAPH_SETTINGS_STORAGE_KEY = "tdp.gene-graph.settings.v1";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 export function GeneGraphView({ nodes, edges }: Props) {
   const graphContainerRef = useRef<HTMLDivElement>(null);
+  const hasHydratedSettingsRef = useRef(false);
+  const persistedSettingsRef = useRef<PersistedGraphSettings | null>(null);
+  const [isSettingsReadyToPersist, setIsSettingsReadyToPersist] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
   const [activeHoverCard, setActiveHoverCard] = useState<HoverInfoCard | null>(null);
   const [pinnedHoverCards, setPinnedHoverCards] = useState<HoverInfoCard[]>([]);
@@ -183,6 +208,75 @@ export function GeneGraphView({ nodes, edges }: Props) {
     });
     observer.observe(el);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.sessionStorage.getItem(GRAPH_SETTINGS_STORAGE_KEY);
+      if (!raw) {
+        hasHydratedSettingsRef.current = true;
+        setIsSettingsReadyToPersist(true);
+        return;
+      }
+      const parsed = JSON.parse(raw) as PersistedGraphSettings;
+      if (!isRecord(parsed)) {
+        hasHydratedSettingsRef.current = true;
+        return;
+      }
+      persistedSettingsRef.current = parsed;
+
+      if (parsed.layoutMode) setLayoutMode(parsed.layoutMode);
+      if (isRecord(parsed.nodeKindEnabled)) {
+        setNodeKindEnabled(parsed.nodeKindEnabled as Record<string, boolean>);
+      }
+      if (isRecord(parsed.edgeTypeEnabled)) {
+        setEdgeTypeEnabled(parsed.edgeTypeEnabled as Record<string, boolean>);
+      }
+      if (isRecord(parsed.sourceCountRangeByType)) {
+        setSourceCountRangeByType(parsed.sourceCountRangeByType as Record<string, CountRange>);
+      }
+      if (isRecord(parsed.destinationCountRangeByType)) {
+        setDestinationCountRangeByType(parsed.destinationCountRangeByType as Record<string, CountRange>);
+      }
+      if (isRecord(parsed.scoreRangeByType)) {
+        setScoreRangeByType(
+          parsed.scoreRangeByType as Record<string, { min: number; max: number }>
+        );
+      }
+      if (isRecord(parsed.nodeNameFilterByKind)) {
+        setNodeNameFilterByKind(parsed.nodeNameFilterByKind as Record<string, string>);
+      }
+      if (isRecord(parsed.nodeColorByKind)) {
+        setNodeColorByKind(parsed.nodeColorByKind as Record<string, string>);
+      }
+      if (isRecord(parsed.draftSourceCountRangeByType)) {
+        setDraftSourceCountRangeByType(
+          parsed.draftSourceCountRangeByType as Record<string, CountRange>
+        );
+      }
+      if (isRecord(parsed.draftDestinationCountRangeByType)) {
+        setDraftDestinationCountRangeByType(
+          parsed.draftDestinationCountRangeByType as Record<string, CountRange>
+        );
+      }
+      if (isRecord(parsed.draftScoreRangeByType)) {
+        setDraftScoreRangeByType(
+          parsed.draftScoreRangeByType as Record<string, { min: number; max: number }>
+        );
+      }
+      if (isRecord(parsed.draftNodeNameFilterByKind)) {
+        setDraftNodeNameFilterByKind(parsed.draftNodeNameFilterByKind as Record<string, string>);
+      }
+      if (isRecord(parsed.draftNodeColorByKind)) {
+        setDraftNodeColorByKind(parsed.draftNodeColorByKind as Record<string, string>);
+      }
+    } catch {
+      // Ignore invalid persisted settings and continue with defaults.
+    } finally {
+      hasHydratedSettingsRef.current = true;
+      setIsSettingsReadyToPersist(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -241,34 +335,38 @@ export function GeneGraphView({ nodes, edges }: Props) {
   useEffect(() => {
     setEdgeTypeEnabled((prev) => {
       const next: Record<string, boolean> = {};
+      const persisted = persistedSettingsRef.current?.edgeTypeEnabled ?? {};
       for (const relation of edgeTypes) {
-        next[relation] = prev[relation] ?? true;
+        next[relation] = prev[relation] ?? persisted[relation] ?? true;
       }
       return next;
     });
 
     setSourceCountRangeByType((prev) => {
       const next: Record<string, CountRange> = {};
+      const persisted = persistedSettingsRef.current?.sourceCountRangeByType ?? {};
       for (const relation of edgeTypes) {
         const limit = edgeCountLimitsByType[relation]?.sourceMax ?? 0;
-        next[relation] = clampCountRange(prev[relation], limit);
+        next[relation] = clampCountRange(prev[relation] ?? persisted[relation], limit);
       }
       return next;
     });
 
     setDestinationCountRangeByType((prev) => {
       const next: Record<string, CountRange> = {};
+      const persisted = persistedSettingsRef.current?.destinationCountRangeByType ?? {};
       for (const relation of edgeTypes) {
         const limit = edgeCountLimitsByType[relation]?.destinationMax ?? 0;
-        next[relation] = clampCountRange(prev[relation], limit);
+        next[relation] = clampCountRange(prev[relation] ?? persisted[relation], limit);
       }
       return next;
     });
 
     setScoreRangeByType((prev) => {
       const next: Record<string, { min: number; max: number }> = {};
+      const persisted = persistedSettingsRef.current?.scoreRangeByType ?? {};
       for (const relation of edgeTypes) {
-        next[relation] = prev[relation] ?? { min: 0, max: 1 };
+        next[relation] = prev[relation] ?? persisted[relation] ?? { min: 0, max: 1 };
       }
       return next;
     });
@@ -277,30 +375,71 @@ export function GeneGraphView({ nodes, edges }: Props) {
   useEffect(() => {
     setNodeKindEnabled((prev) => {
       const next: Record<string, boolean> = {};
+      const persisted = persistedSettingsRef.current?.nodeKindEnabled ?? {};
       for (const kind of nodeKinds) {
-        next[kind] = prev[kind] ?? true;
+        next[kind] = prev[kind] ?? persisted[kind] ?? true;
       }
       return next;
     });
 
     setNodeNameFilterByKind((prev) => {
       const defaults = buildDefaultNodeNameFilterByKind(nodeKinds);
+      const persisted = persistedSettingsRef.current?.nodeNameFilterByKind ?? {};
       const next: Record<string, string> = {};
       for (const kind of nodeKinds) {
-        next[kind] = prev[kind] ?? defaults[kind];
+        next[kind] = prev[kind] ?? persisted[kind] ?? defaults[kind];
       }
       return next;
     });
 
     setNodeColorByKind((prev) => {
       const defaults = buildDefaultNodeColorByKind(nodeKinds);
+      const persisted = persistedSettingsRef.current?.nodeColorByKind ?? {};
       const next: Record<string, string> = {};
       for (const kind of nodeKinds) {
-        next[kind] = prev[kind] ?? defaults[kind];
+        next[kind] = prev[kind] ?? persisted[kind] ?? defaults[kind];
       }
       return next;
     });
   }, [nodeKinds]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hasHydratedSettingsRef.current) return;
+    if (!isSettingsReadyToPersist) return;
+
+    const payload: PersistedGraphSettings = {
+      layoutMode,
+      nodeKindEnabled,
+      edgeTypeEnabled,
+      sourceCountRangeByType,
+      destinationCountRangeByType,
+      scoreRangeByType,
+      nodeNameFilterByKind,
+      nodeColorByKind,
+      draftSourceCountRangeByType,
+      draftDestinationCountRangeByType,
+      draftScoreRangeByType,
+      draftNodeNameFilterByKind,
+      draftNodeColorByKind
+    };
+    window.sessionStorage.setItem(GRAPH_SETTINGS_STORAGE_KEY, JSON.stringify(payload));
+  }, [
+    layoutMode,
+    nodeKindEnabled,
+    edgeTypeEnabled,
+    sourceCountRangeByType,
+    destinationCountRangeByType,
+    scoreRangeByType,
+    nodeNameFilterByKind,
+    nodeColorByKind,
+    draftSourceCountRangeByType,
+    draftDestinationCountRangeByType,
+    draftScoreRangeByType,
+    draftNodeNameFilterByKind,
+    draftNodeColorByKind,
+    isSettingsReadyToPersist
+  ]);
 
   const graphData = useMemo(() => {
     const kindFilteredNodes: GraphNodeWithViz[] = nodes

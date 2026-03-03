@@ -168,7 +168,7 @@ components:
           type: string
         kind:
           type: string
-          enum: [gene, target, pathway]
+          enum: [gene, target, pathway, drug]
         score:
           type: number
     GraphEdge:

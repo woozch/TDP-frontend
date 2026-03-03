@@ -43,7 +43,7 @@ export interface EvidenceItem {
 export interface GraphNode {
   id: string;
   label: string;
-  kind: "gene" | "target" | "pathway";
+  kind: "gene" | "target" | "pathway" | "drug";
   score: number;
 }
 

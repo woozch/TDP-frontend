@@ -33,10 +33,40 @@ body {
 }
 
 .dark body {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #171a1f;
+  color: #e6e8ec;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Dual-thumb range input for score filters */
+.tdp-range-thumb::-webkit-slider-runnable-track {
+  height: 0;
+}
+
+.tdp-range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #f69e25;
+  border: 2px solid #ffffff;
+  margin-top: -6px;
+}
+
+.tdp-range-thumb::-moz-range-track {
+  height: 0;
+}
+
+.tdp-range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #f69e25;
+  border: 2px solid #ffffff;
 }

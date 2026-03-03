@@ -25,13 +25,20 @@ export interface SessionState {
   graphEdges: GraphEdge[];
   pharma: PharmaReportItem[];
   isStreaming: boolean;
+  workflowStarted: boolean;
   error?: string;
 }
 
 interface ChatSessionStore {
   sessions: SessionSummary[];
   activeSession: SessionState | null;
+  sessionsLoading: boolean;
+  sessionsError: string | null;
+  activeSessionLoading: boolean;
   setSessions: (sessions: SessionSummary[]) => void;
+  setSessionsLoading: (loading: boolean) => void;
+  setSessionsError: (error: string | null) => void;
+  setActiveSessionLoading: (loading: boolean) => void;
   upsertSessionSummary: (session: SessionSummary) => void;
   removeSession: (sessionId: string) => void;
   setActiveSession: (session: SessionDetail) => void;
@@ -42,7 +49,9 @@ interface ChatSessionStore {
   setGraph: (nodes: SessionState["graphNodes"], edges: SessionState["graphEdges"]) => void;
   setPharma: (items: SessionState["pharma"]) => void;
   completeStream: () => void;
+  setTabStatus: (tab: Exclude<TabKey, "chat">, status: TabStatus) => void;
   setActiveTab: (tab: TabKey) => void;
+  clearError: () => void;
   setError: (message: string) => void;
 }
 
@@ -64,6 +73,13 @@ const markLoadingTabsAsError = (
   pharma: tabStatus.pharma === "loading" ? "error" : tabStatus.pharma
 });
 
+const hasWorkflowStarted = (session: SessionDetail): boolean =>
+  session.messages.some((message) => message.role === "user") ||
+  session.evidence.length > 0 ||
+  session.graphNodes.length > 0 ||
+  session.graphEdges.length > 0 ||
+  session.pharma.length > 0;
+
 const buildSessionState = (session: SessionDetail): SessionState => {
   const tabStatus: Record<TabKey, TabStatus> = {
     chat: session.messages.length ? "complete" : "idle",
@@ -84,6 +100,7 @@ const buildSessionState = (session: SessionDetail): SessionState => {
     graphEdges: session.graphEdges,
     pharma: session.pharma,
     isStreaming: false,
+    workflowStarted: hasWorkflowStarted(session),
     activeTab: "chat"
   };
 };
@@ -91,7 +108,13 @@ const buildSessionState = (session: SessionDetail): SessionState => {
 export const useChatSessionStore = create<ChatSessionStore>((set) => ({
   sessions: [],
   activeSession: null,
+  sessionsLoading: true,
+  sessionsError: null,
+  activeSessionLoading: false,
   setSessions: (sessions) => set(() => ({ sessions })),
+  setSessionsLoading: (sessionsLoading) => set(() => ({ sessionsLoading })),
+  setSessionsError: (sessionsError) => set(() => ({ sessionsError })),
+  setActiveSessionLoading: (activeSessionLoading) => set(() => ({ activeSessionLoading })),
   upsertSessionSummary: (session) =>
     set((state) => {
       const existing = state.sessions.find((item) => item.id === session.id);
@@ -147,6 +170,7 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
           graphEdges: [],
           pharma: [],
           isStreaming: true,
+          workflowStarted: true,
           error: undefined
         }
       };
@@ -172,6 +196,7 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
         activeSession: {
           ...state.activeSession,
           messages,
+          workflowStarted: true,
           tabStatus: { ...state.activeSession.tabStatus, answer: "loading" }
         }
       };
@@ -232,6 +257,21 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
         }
       };
     }),
+  setTabStatus: (tab, status) =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          tabStatus: {
+            ...state.activeSession.tabStatus,
+            [tab]: status
+          }
+        }
+      };
+    }),
   setActiveTab: (tab) =>
     set((state) => {
       if (!state.activeSession) {
@@ -241,6 +281,18 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
         activeSession: {
           ...state.activeSession,
           activeTab: tab
+        }
+      };
+    }),
+  clearError: () =>
+    set((state) => {
+      if (!state.activeSession) {
+        return state;
+      }
+      return {
+        activeSession: {
+          ...state.activeSession,
+          error: undefined
         }
       };
     }),

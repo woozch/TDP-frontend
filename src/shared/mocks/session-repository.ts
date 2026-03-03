@@ -10,7 +10,13 @@ import {
   mockPharmaReport
 } from "@/shared/mocks/data";
 
-const userSessions = new Map<string, SessionDetail[]>();
+type TdpGlobalStore = typeof globalThis & {
+  __tdpUserSessions?: Map<string, SessionDetail[]>;
+};
+
+const globalStore = globalThis as TdpGlobalStore;
+const userSessions =
+  globalStore.__tdpUserSessions ?? (globalStore.__tdpUserSessions = new Map<string, SessionDetail[]>());
 
 const nowIso = () => new Date().toISOString();
 

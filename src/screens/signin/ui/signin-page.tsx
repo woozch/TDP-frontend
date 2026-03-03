@@ -21,12 +21,12 @@ export function SignInPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-gray-100 dark:bg-gray-900">
-      <header className="flex h-12 shrink-0 items-center justify-end border-b border-gray-200 bg-white/95 px-4 dark:border-gray-700 dark:bg-gray-900/95">
+    <main className="flex min-h-screen flex-col bg-gray-100 dark:bg-[#171a1f]">
+      <header className="flex h-12 shrink-0 items-center justify-end border-b border-gray-200 bg-white/95 px-4 dark:border-[#3a404a] dark:bg-[#171a1f]/95">
         <HeaderSettings />
       </header>
       <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-[#3a404a] dark:bg-[#2a2f36]">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Target Discovery Platform</h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -48,7 +48,7 @@ export function SignInPage() {
             onClick={() => {
               void signIn("google", { callbackUrl: "/chat" });
             }}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200 dark:hover:bg-gray-600"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
               <path

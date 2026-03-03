@@ -8,4 +8,4 @@ RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.l
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-USER node
+USER root

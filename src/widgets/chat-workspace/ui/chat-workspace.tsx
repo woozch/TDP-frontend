@@ -1,15 +1,20 @@
 "use client";
 
+import { useMemo } from "react";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useSendQuery } from "@/features/send-query/model/use-send-query";
 
 export function ChatWorkspace() {
   const session = useChatSessionStore((state) => state.activeSession);
   const { query, setQuery, submit } = useSendQuery();
+  const isMac = useMemo(
+    () => typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform),
+    []
+  );
 
   if (!session) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600 shadow-sm dark:border-[#3a404a] dark:bg-[#2a2f36] dark:text-gray-400">
         No session found.
       </div>
     );
@@ -24,7 +29,7 @@ export function ChatWorkspace() {
   return (
     <section>
       <form
-        className="flex items-end gap-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+        className="flex items-end gap-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-[#3a404a] dark:bg-[#2a2f36]"
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
@@ -34,6 +39,17 @@ export function ChatWorkspace() {
           <textarea
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.nativeEvent.isComposing) {
+                return;
+              }
+
+              const shouldSend = isMac ? event.metaKey : event.shiftKey;
+              if (shouldSend) {
+                event.preventDefault();
+                void submit();
+              }
+            }}
             placeholder="Enter your query or follow-up to create or update the report..."
             rows={2}
             className="w-full resize-none rounded-xl border-0 bg-transparent px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:ring-0 dark:text-gray-100 dark:placeholder:text-gray-500"

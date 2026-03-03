@@ -48,12 +48,27 @@ export const mockEvidence: EvidenceItem[] = [
 export const mockGraphNodes: GraphNode[] = [
   { id: "KRAS", label: "KRAS", kind: "gene", score: 0.95 },
   { id: "STK33", label: "STK33", kind: "target", score: 0.88 },
-  { id: "DDR", label: "DNA Damage Response", kind: "pathway", score: 0.81 }
+  { id: "DDR", label: "DNA Damage Response", kind: "pathway", score: 0.81 },
+  { id: "DrugX", label: "DrugX", kind: "drug", score: 0.77 },
+  { id: "PIK3CA", label: "PIK3CA", kind: "gene", score: 0.86 },
+  { id: "MET", label: "MET", kind: "target", score: 0.79 },
+  { id: "MAPK", label: "MAPK Signaling", kind: "pathway", score: 0.83 },
+  { id: "DrugY", label: "DrugY", kind: "drug", score: 0.73 },
+  { id: "TP53", label: "TP53", kind: "gene", score: 0.9 },
+  { id: "MDM2", label: "MDM2", kind: "target", score: 0.82 }
 ];
 
 export const mockGraphEdges: GraphEdge[] = [
   { source: "KRAS", target: "STK33", relation: "synthetic_lethal_candidate", confidence: 0.84 },
-  { source: "KRAS", target: "DDR", relation: "pathway_dependency", confidence: 0.79 }
+  { source: "KRAS", target: "DDR", relation: "pathway_dependency", confidence: 0.79 },
+  { source: "DrugX", target: "STK33", relation: "inhibits", confidence: 0.74 },
+  { source: "PIK3CA", target: "MAPK", relation: "pathway_dependency", confidence: 0.76 },
+  { source: "KRAS", target: "MAPK", relation: "activates", confidence: 0.81 },
+  { source: "MET", target: "MAPK", relation: "cross_talk", confidence: 0.72 },
+  { source: "DrugY", target: "MET", relation: "inhibits", confidence: 0.78 },
+  { source: "TP53", target: "MDM2", relation: "regulates", confidence: 0.8 },
+  { source: "TP53", target: "DDR", relation: "pathway_dependency", confidence: 0.77 },
+  { source: "DrugX", target: "PIK3CA", relation: "off_target_signal", confidence: 0.61 }
 ];
 
 export const mockPharmaReport: PharmaReportItem[] = [

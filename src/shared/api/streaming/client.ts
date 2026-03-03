@@ -2,7 +2,7 @@ import type { StreamEvent, StreamEventType } from "@contracts/types";
 
 interface StreamOptions {
   query: string;
-  sessionId?: string;
+  sessionId: string;
   onEvent: (event: StreamEvent) => void;
 }
 
@@ -23,14 +23,22 @@ export async function streamChatResult({
 }: StreamOptions): Promise<void> {
   const response = await fetch("/api/chat/stream", {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ query, sessionId })
   });
 
-  if (!response.ok || !response.body) {
-    throw new Error("Failed to open stream");
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(
+      `Failed to open stream (${response.status}${detail ? `: ${detail}` : ""})`
+    );
+  }
+
+  if (!response.body) {
+    throw new Error("Failed to open stream: empty response body");
   }
 
   const reader = response.body.getReader();

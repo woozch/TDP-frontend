@@ -49,7 +49,7 @@ export function HeaderSettings() {
             onClick={() => setOpen(false)}
           />
           <div
-            className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+            className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-[#3a404a] dark:bg-[#2a2f36]"
             role="menu"
           >
             <div className="px-3 py-2">
@@ -68,7 +68,7 @@ export function HeaderSettings() {
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
                     theme === "light"
                       ? "border-[#f69e25] bg-[#f69e25]/15 text-[#c47a1a] dark:border-[#f69e25] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
                 >
                   Light
@@ -84,7 +84,7 @@ export function HeaderSettings() {
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
                     theme === "dark"
                       ? "border-[#f69e25] bg-[#f69e25]/15 text-[#c47a1a] dark:border-[#f69e25] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
                 >
                   Dark

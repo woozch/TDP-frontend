@@ -3,8 +3,12 @@
 import { useEffect, useCallback, useState } from "react";
 import type { SessionDetail, SessionSummary } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
+import { useLanguage } from "@/shared/language/language-context";
+import { getUiText } from "@/shared/i18n/ui-messages";
 
 export function useLoadSession(enabled: boolean) {
+  const { language } = useLanguage();
+  const text = getUiText(language);
   const setSessions = useChatSessionStore((state) => state.setSessions);
   const setActiveSession = useChatSessionStore((state) => state.setActiveSession);
   const clearActiveSession = useChatSessionStore((state) => state.clearActiveSession);
@@ -23,13 +27,13 @@ export function useLoadSession(enabled: boolean) {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({ language })
       });
       if (cancelled()) return;
       if (!createRes.ok) {
         clearActiveSession();
         setSessions([]);
-        setSessionsError("Failed to create an initial report.");
+        setSessionsError(`${text.newReport} failed.`);
         return;
       }
       const createData = (await createRes.json()) as { session: SessionDetail };
@@ -40,13 +44,14 @@ export function useLoadSession(enabled: boolean) {
           id: created.id,
           userId: created.userId,
           title: created.title,
+          language: created.language,
           createdAt: created.createdAt,
           updatedAt: created.updatedAt
         }
       ]);
       setActiveSession(created);
     },
-    [clearActiveSession, setActiveSession, setSessions, setSessionsError]
+    [clearActiveSession, language, setActiveSession, setSessions, setSessionsError, text.newReport]
   );
 
   useEffect(() => {
@@ -74,7 +79,7 @@ export function useLoadSession(enabled: boolean) {
       if (cancelled) return;
       if (!response.ok) {
         setSessionsLoading(false);
-        setSessionsError("Failed to load report history.");
+        setSessionsError(`${text.reportHistory} load failed.`);
         setSessions([]);
         return;
       }
@@ -121,7 +126,7 @@ export function useLoadSession(enabled: boolean) {
           }
         }
       } else if (!cancelled) {
-        setSessionsError("Failed to load report.");
+        setSessionsError(`${text.finalReport} load failed.`);
         clearActiveSession();
       }
       if (!cancelled) setActiveSessionLoading(false);
@@ -140,7 +145,9 @@ export function useLoadSession(enabled: boolean) {
     setSessionsLoading,
     setSessionsError,
     setActiveSessionLoading,
-    bootstrapSession
+    bootstrapSession,
+    text.finalReport,
+    text.reportHistory
   ]);
 
   return { retry };

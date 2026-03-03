@@ -53,6 +53,8 @@ interface ChatSessionStore {
   setActiveTab: (tab: TabKey) => void;
   clearError: () => void;
   setError: (message: string) => void;
+  setSessionTitle: (sessionId: string, title: string, updatedAt?: string) => void;
+  setSessionLanguage: (sessionId: string, language: SessionSummary["language"], updatedAt?: string) => void;
 }
 
 const defaultTabStatus = (): Record<TabKey, TabStatus> => ({
@@ -309,6 +311,31 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
           tabStatus: markLoadingTabsAsError(state.activeSession.tabStatus)
         }
       };
+    }),
+  setSessionTitle: (sessionId, title, updatedAt) =>
+    set((state) => {
+      const nextUpdatedAt = updatedAt ?? new Date().toISOString();
+      const sessions = state.sessions.map((item) =>
+        item.id === sessionId ? { ...item, title, updatedAt: nextUpdatedAt } : item
+      );
+      if (state.activeSession?.id !== sessionId) {
+        return { sessions };
+      }
+      return {
+        sessions,
+        activeSession: {
+          ...state.activeSession,
+          title
+        }
+      };
+    }),
+  setSessionLanguage: (sessionId, language, updatedAt) =>
+    set((state) => {
+      const nextUpdatedAt = updatedAt ?? new Date().toISOString();
+      const sessions = state.sessions.map((item) =>
+        item.id === sessionId ? { ...item, language, updatedAt: nextUpdatedAt } : item
+      );
+      return { sessions };
     })
 }));
 

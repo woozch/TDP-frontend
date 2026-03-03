@@ -5,6 +5,7 @@ export type ChatRole = "user" | "assistant";
 export interface QueryRequest {
   query: string;
   sessionId: string;
+  language?: "en" | "ko" | "ja" | "zh" | "es";
 }
 
 export interface AuthUser {
@@ -18,6 +19,7 @@ export interface SessionSummary {
   id: string;
   userId: string;
   title: string;
+  language: "en" | "ko" | "ja" | "zh" | "es";
   createdAt: string;
   updatedAt: string;
 }
@@ -79,6 +81,7 @@ export interface SessionDetail extends SessionSummary {
 
 export interface CreateSessionRequest {
   title?: string;
+  language?: "en" | "ko" | "ja" | "zh" | "es";
 }
 
 export interface CreateSessionResponse {
@@ -90,6 +93,7 @@ export type StreamEventType =
   | "evidence.ready"
   | "graph.ready"
   | "pharma.ready"
+  | "session.updated"
   | "done"
   | "error";
 
@@ -106,5 +110,6 @@ export type StreamEvent =
   | StreamEnvelope<"evidence.ready", { references: EvidenceItem[] }>
   | StreamEnvelope<"graph.ready", { nodes: GraphNode[]; edges: GraphEdge[] }>
   | StreamEnvelope<"pharma.ready", { items: PharmaReportItem[] }>
+  | StreamEnvelope<"session.updated", { title: string; updatedAt: string }>
   | StreamEnvelope<"done", { completedAt: string }>
   | StreamEnvelope<"error", { message: string; code?: string }>;

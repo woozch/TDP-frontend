@@ -2,9 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useLanguage } from "@/shared/language/language-context";
+import { getUiText } from "@/shared/i18n/ui-messages";
 import { HeaderSettings } from "@/widgets/header-settings";
 
 export function SignInPage() {
+  const { language } = useLanguage();
+  const text = getUiText(language);
   const router = useRouter();
 
   const handleMockSignIn = async () => {
@@ -28,9 +32,9 @@ export function SignInPage() {
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-[#3a404a] dark:bg-[#2a2f36]">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Target Discovery Platform</h1>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{text.appName}</h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Use mock sign in for local development, or Google when configured.
+            {text.signinDescription}
           </p>
         </div>
 
@@ -40,7 +44,7 @@ export function SignInPage() {
             onClick={() => void handleMockSignIn()}
             className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-[#f69e25] bg-[#f69e25]/10 px-4 py-3 text-sm font-medium text-[#c47a1a] transition hover:bg-[#f69e25]/20 dark:text-[#f69e25] dark:hover:bg-[#f69e25]/20"
           >
-            Mock sign in
+            {text.mockSignIn}
           </button>
 
           <button
@@ -68,7 +72,7 @@ export function SignInPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Sign in with Google
+            {text.signInWithGoogle}
           </button>
         </div>
         </div>

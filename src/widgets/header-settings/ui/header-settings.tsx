@@ -1,12 +1,32 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useTheme } from "@/shared/theme/theme-context";
+import { useEffect, useRef, useState } from "react";
+import { LANGUAGE_OPTIONS, useLanguage } from "@/shared/language/language-context";
+import { type Language } from "@/shared/language/language-config";
+import { getUiText } from "@/shared/i18n/ui-messages";
+import { Theme, useTheme } from "@/shared/theme/theme-context";
 
 export function HeaderSettings() {
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
+  const text = getUiText(language);
   const [open, setOpen] = useState(false);
+  const [draftTheme, setDraftTheme] = useState<Theme>(theme);
+  const [draftLanguage, setDraftLanguage] = useState<Language>(language);
+  const [languageListOpen, setLanguageListOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const selectedLanguage = LANGUAGE_OPTIONS.find((item) => item.code === draftLanguage) ?? LANGUAGE_OPTIONS[0];
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setDraftTheme(theme);
+    setDraftLanguage(language);
+    setLanguageListOpen(false);
+  }, [open, theme, language]);
+
+  const hasChanges = draftTheme !== theme || draftLanguage !== language;
 
   return (
     <div className="relative" ref={ref}>
@@ -14,7 +34,7 @@ export function HeaderSettings() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="rounded p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-        aria-label="Open settings"
+        aria-label={text.openSettings}
         aria-expanded={open}
         aria-haspopup="true"
       >
@@ -44,7 +64,7 @@ export function HeaderSettings() {
         <>
           <button
             type="button"
-            aria-label="Close settings"
+            aria-label={text.closeSettings}
             className="fixed inset-0 z-10"
             onClick={() => setOpen(false)}
           />
@@ -54,19 +74,16 @@ export function HeaderSettings() {
           >
             <div className="px-3 py-2">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Theme
+                {text.theme}
               </p>
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
                   role="menuitemradio"
-                  aria-checked={theme === "light"}
-                  onClick={() => {
-                    setTheme("light");
-                    setOpen(false);
-                  }}
+                  aria-checked={draftTheme === "light"}
+                  onClick={() => setDraftTheme("light")}
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
-                    theme === "light"
+                    draftTheme === "light"
                       ? "border-[#f69e25] bg-[#f69e25]/15 text-[#c47a1a] dark:border-[#f69e25] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
                       : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
@@ -76,13 +93,10 @@ export function HeaderSettings() {
                 <button
                   type="button"
                   role="menuitemradio"
-                  aria-checked={theme === "dark"}
-                  onClick={() => {
-                    setTheme("dark");
-                    setOpen(false);
-                  }}
+                  aria-checked={draftTheme === "dark"}
+                  onClick={() => setDraftTheme("dark")}
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
-                    theme === "dark"
+                    draftTheme === "dark"
                       ? "border-[#f69e25] bg-[#f69e25]/15 text-[#c47a1a] dark:border-[#f69e25] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
                       : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
@@ -90,6 +104,81 @@ export function HeaderSettings() {
                   Dark
                 </button>
               </div>
+            </div>
+            <div className="px-3 py-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                {text.language}
+              </p>
+              <div className="relative mt-2">
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={languageListOpen}
+                  onClick={() => setLanguageListOpen((prev) => !prev)}
+                  className="flex w-full items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <span aria-hidden>{selectedLanguage.flag}</span>
+                    <span>{selectedLanguage.label}</span>
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">▼</span>
+                </button>
+                {languageListOpen ? (
+                  <ul
+                    role="listbox"
+                    aria-label="Language options"
+                    className="absolute left-0 right-0 z-30 mt-1 max-h-44 overflow-y-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-[#4a515c] dark:bg-[#2a2f36]"
+                  >
+                    {LANGUAGE_OPTIONS.map((item) => (
+                      <li key={item.code}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={draftLanguage === item.code}
+                          onClick={() => {
+                            setDraftLanguage(item.code);
+                            setLanguageListOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
+                            draftLanguage === item.code
+                              ? "bg-[#f69e25]/15 text-[#c47a1a] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
+                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#343a43]"
+                          }`}
+                        >
+                          <span aria-hidden>{item.flag}</span>
+                          <span>{item.label}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-3 py-2 dark:border-[#3a404a]">
+              <button
+                type="button"
+                onClick={() => {
+                  setDraftTheme(theme);
+                  setDraftLanguage(language);
+                  setLanguageListOpen(false);
+                }}
+                className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-[#4a515c] dark:text-gray-300 dark:hover:border-gray-500"
+              >
+                {text.reset}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme(draftTheme);
+                  setLanguage(draftLanguage);
+                  setLanguageListOpen(false);
+                  setOpen(false);
+                }}
+                disabled={!hasChanges}
+                className="rounded-md bg-[#f69e25] px-3 py-1.5 text-sm text-white transition hover:bg-[#e38e19] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {text.apply}
+              </button>
             </div>
           </div>
         </>

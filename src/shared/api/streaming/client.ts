@@ -1,8 +1,10 @@
 import type { StreamEvent, StreamEventType } from "@contracts/types";
+import type { Language } from "@/shared/language/language-config";
 
 interface StreamOptions {
   query: string;
   sessionId: string;
+  language: Language;
   onEvent: (event: StreamEvent) => void;
 }
 
@@ -12,6 +14,7 @@ const streamEventTypes: StreamEventType[] = [
   "evidence.ready",
   "graph.ready",
   "pharma.ready",
+  "session.updated",
   "done",
   "error"
 ];
@@ -19,6 +22,7 @@ const streamEventTypes: StreamEventType[] = [
 export async function streamChatResult({
   query,
   sessionId,
+  language,
   onEvent
 }: StreamOptions): Promise<void> {
   const response = await fetch("/api/chat/stream", {
@@ -27,7 +31,7 @@ export async function streamChatResult({
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ query, sessionId })
+    body: JSON.stringify({ query, sessionId, language })
   });
 
   if (!response.ok) {

@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { useLoadSession } from "@/features/load-session/model/use-load-session";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
+import { useLanguage } from "@/shared/language/language-context";
+import { getUiText } from "@/shared/i18n/ui-messages";
 import { LeftSidebar } from "@/widgets/left-sidebar";
 import { ChatWorkspace } from "@/widgets/chat-workspace";
 import { ResultTabs } from "@/widgets/result-tabs";
 import { HeaderSettings } from "@/widgets/header-settings";
 
-const APP_NAME = "Target Discovery Platform";
-
 export function ChatPage() {
+  const { language } = useLanguage();
+  const text = getUiText(language);
   const { retry } = useLoadSession(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sessions = useChatSessionStore((state) => state.sessions);
@@ -30,13 +32,13 @@ export function ChatPage() {
             type="button"
             onClick={() => setSidebarOpen(true)}
             className="rounded p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200 md:hidden"
-            aria-label="Open menu"
+            aria-label={text.openMenu}
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">{APP_NAME}</h1>
+          <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">{text.appName}</h1>
         </div>
         <HeaderSettings />
       </header>
@@ -46,7 +48,7 @@ export function ChatPage() {
         {sidebarOpen ? (
           <button
             type="button"
-            aria-label="Close menu"
+            aria-label={text.closeMenu}
             className="fixed inset-0 z-30 bg-black/40 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
@@ -78,8 +80,8 @@ export function ChatPage() {
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#f69e25] border-t-transparent" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {sessionsLoading && sessions.length === 0
-                    ? "Loading report history…"
-                    : "Loading report…"}
+                    ? text.loadingReportHistory
+                    : text.loadingReport}
                 </p>
               </div>
             ) : (

@@ -60,6 +60,38 @@ paths:
                     $ref: "#/components/schemas/SessionDetail"
         "404":
           description: Not found
+    patch:
+      summary: Update chat session title
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+      responses:
+        "200":
+          description: Updated session detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/SessionDetail"
+        "400":
+          description: Missing title
+        "404":
+          description: Not found
   /api/chat/stream:
     post:
       summary: Stream hybrid intelligence results
@@ -69,6 +101,17 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/QueryRequest"
+            examples:
+              english_query:
+                value:
+                  query: "Summarize KRAS synthetic lethality candidates"
+                  sessionId: "session-123"
+                  language: "en"
+              korean_query:
+                value:
+                  query: "KRAS synthetic lethality 후보를 요약해줘"
+                  sessionId: "session-123"
+                  language: "ko"
       responses:
         "200":
           description: SSE stream with progressive tab payloads
@@ -81,6 +124,10 @@ paths:
                   value: |
                     event: answer.delta
                     data: {"type":"answer.delta","seq":1,"sessionId":"session-123","timestamp":"2026-02-26T09:30:00.000Z","payload":{"token":"TP53 is highly relevant. "}}
+                answer_delta_ko:
+                  value: |
+                    event: answer.delta
+                    data: {"type":"answer.delta","seq":1,"sessionId":"session-123","timestamp":"2026-02-26T09:30:00.000Z","payload":{"token":"TP53 관련성이 매우 높습니다. "}}
                 evidence_ready:
                   value: |
                     event: evidence.ready
@@ -93,10 +140,14 @@ paths:
                   value: |
                     event: pharma.ready
                     data: {"type":"pharma.ready","seq":9,"sessionId":"session-123","timestamp":"2026-02-26T09:30:03.000Z","payload":{"items":[{"company":"AcmeBio","target":"TP53","stage":"phase2","indication":"Solid tumors","note":"..."}]}}
+                session_updated:
+                  value: |
+                    event: session.updated
+                    data: {"type":"session.updated","seq":10,"sessionId":"session-123","timestamp":"2026-02-26T09:30:03.500Z","payload":{"title":"KRAS synthetic lethality analysis","updatedAt":"2026-02-26T09:30:03.500Z"}}
                 done:
                   value: |
                     event: done
-                    data: {"type":"done","seq":10,"sessionId":"session-123","timestamp":"2026-02-26T09:30:04.000Z","payload":{"completedAt":"2026-02-26T09:30:04.000Z"}}
+                    data: {"type":"done","seq":11,"sessionId":"session-123","timestamp":"2026-02-26T09:30:04.000Z","payload":{"completedAt":"2026-02-26T09:30:04.000Z"}}
   /api/references/{id}:
     get:
       summary: Get one evidence detail
@@ -125,9 +176,12 @@ components:
           type: string
         sessionId:
           type: string
+        language:
+          type: string
+          enum: [en, ko, ja, zh, es]
     SessionSummary:
       type: object
-      required: [id, userId, title, createdAt, updatedAt]
+      required: [id, userId, title, language, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -135,6 +189,9 @@ components:
           type: string
         title:
           type: string
+        language:
+          type: string
+          enum: [en, ko, ja, zh, es]
         createdAt:
           type: string
           format: date-time
@@ -257,3 +314,6 @@ components:
       properties:
         title:
           type: string
+        language:
+          type: string
+          enum: [en, ko, ja, zh, es]

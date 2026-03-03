@@ -2,63 +2,25 @@
 
 import { useEffect } from "react";
 import type { TabKey, TabStatus } from "@contracts/types";
+import { useLanguage } from "@/shared/language/language-context";
+import { getUiText } from "@/shared/i18n/ui-messages";
 import { useActiveTab } from "@/features/select-tab/model/use-active-tab";
 import { useRetryWorkflowStep } from "@/features/send-query/model/use-retry-workflow-step";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { ReferenceList } from "@/entities/reference/ui/reference-list";
 import { GeneGraphView } from "@/entities/gene-graph/ui/gene-graph-view";
 
-const tabs: { key: TabKey; label: string }[] = [
-  { key: "chat", label: "Workflow Progress" },
-  { key: "answer", label: "Final Report" },
-  { key: "evidence", label: "Evidence" },
-  { key: "graph", label: "Gene Graph" },
-  { key: "pharma", label: "Pharma Report" }
-];
-
-const workflowSteps: {
-  key: Exclude<TabKey, "chat">;
-  title: string;
-  description: string;
-  inProgressDetail: string;
-}[] = [
-  {
-    key: "answer",
-    title: "Draft final report",
-    description: "Summarize key findings into a coherent narrative.",
-    inProgressDetail: "Generating report narrative from streamed insights."
-  },
-  {
-    key: "evidence",
-    title: "Collect evidence",
-    description: "Gather references and supporting literature.",
-    inProgressDetail: "Loading references and ranking supporting studies."
-  },
-  {
-    key: "graph",
-    title: "Build gene graph",
-    description: "Link genes, targets and pathways into a network view.",
-    inProgressDetail: "Constructing network nodes and edges."
-  },
-  {
-    key: "pharma",
-    title: "Compile pharma view",
-    description: "Summarize clinical and pipeline activity.",
-    inProgressDetail: "Aggregating pharma pipeline and stage insights."
-  }
-];
-
-const formatStatus = (status: TabStatus) => {
+const formatStatus = (status: TabStatus, text: ReturnType<typeof getUiText>) => {
   if (status === "loading") {
-    return "loading";
+    return text.loading;
   }
   if (status === "complete") {
-    return "done";
+    return text.done;
   }
   if (status === "error") {
-    return "error";
+    return text.error;
   }
-  return "idle";
+  return text.idle;
 };
 
 const TAB_INDICATOR_SIZE = 14;
@@ -128,9 +90,51 @@ function TabStatusIndicator({ status }: { status: TabStatus }) {
 }
 
 export function ResultTabs() {
+  const { language } = useLanguage();
+  const text = getUiText(language);
   const { activeTab, setActiveTab } = useActiveTab();
   const session = useChatSessionStore((state) => state.activeSession);
   const { retryStep } = useRetryWorkflowStep();
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "chat", label: text.workflowProgress },
+    { key: "answer", label: text.finalReport },
+    { key: "evidence", label: text.evidence },
+    { key: "graph", label: text.geneGraph },
+    { key: "pharma", label: text.pharmaReport }
+  ];
+
+  const workflowSteps: {
+    key: Exclude<TabKey, "chat">;
+    title: string;
+    description: string;
+    inProgressDetail: string;
+  }[] = [
+    {
+      key: "answer",
+      title: text.stepDraftFinalReport,
+      description: text.stepDraftFinalReportDesc,
+      inProgressDetail: text.stepDraftFinalReportLoading
+    },
+    {
+      key: "evidence",
+      title: text.stepCollectEvidence,
+      description: text.stepCollectEvidenceDesc,
+      inProgressDetail: text.stepCollectEvidenceLoading
+    },
+    {
+      key: "graph",
+      title: text.stepBuildGeneGraph,
+      description: text.stepBuildGeneGraphDesc,
+      inProgressDetail: text.stepBuildGeneGraphLoading
+    },
+    {
+      key: "pharma",
+      title: text.stepCompilePharma,
+      description: text.stepCompilePharmaDesc,
+      inProgressDetail: text.stepCompilePharmaLoading
+    }
+  ];
 
   if (!session) {
     return null;
@@ -178,7 +182,7 @@ export function ResultTabs() {
                 <span className="inline-flex items-center gap-1.5">
                   <span>{tab.label}</span>
                   <TabStatusIndicator status={status} />
-                  <span className="sr-only">· {formatStatus(status)}</span>
+                  <span className="sr-only">· {formatStatus(status, text)}</span>
                 </span>
               </button>
             );
@@ -186,7 +190,7 @@ export function ResultTabs() {
         </div>
         {session.error ? (
           <p className="mt-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300">
-            Stream error: {session.error}
+            {text.streamError}: {session.error}
           </p>
         ) : null}
       </div>
@@ -197,7 +201,7 @@ export function ResultTabs() {
             {session.workflowStarted ? (
               <section className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-[#4a515c] dark:bg-[#171a1f]/60">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Workflow status
+                  {text.workflowStatus}
                 </p>
                 <div className="mt-2">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#343a43]">
@@ -210,8 +214,8 @@ export function ResultTabs() {
                   </div>
                   <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
                     {hasError
-                      ? "Workflow paused due to an error."
-                      : `${progressPercent}% complete (${completedCount}/${totalWorkflowSteps} steps done)`}
+                      ? text.workflowPausedByError
+                      : text.workflowProgressSummary(progressPercent, completedCount, totalWorkflowSteps)}
                   </p>
                 </div>
                 <ul className="mt-2 space-y-2">
@@ -247,11 +251,11 @@ export function ResultTabs() {
                             </p>
                           ) : status === "complete" ? (
                             <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                              Completed
+                              {text.stepCompleted}
                             </p>
                           ) : status === "error" ? (
                             <p className="text-[11px] text-red-600 dark:text-red-400">
-                              Failed. Please retry.
+                              {text.stepFailedRetry}
                             </p>
                           ) : (
                             <p className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -261,12 +265,12 @@ export function ResultTabs() {
                         </div>
                         <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
                           {status === "loading"
-                            ? "In progress"
+                            ? text.inProgress
                             : status === "complete"
-                              ? "Done"
+                              ? text.done
                               : status === "error"
-                                ? "Fail"
-                                : "Pending"}
+                                ? text.fail
+                                : text.pending}
                           {status === "error" || status === "complete" ? (
                             <button
                               type="button"
@@ -276,13 +280,13 @@ export function ResultTabs() {
                               }`}
                               title={
                                 status === "complete"
-                                  ? `Run ${step.title} again`
-                                  : `Retry ${step.title}`
+                                  ? text.runStepAgain(step.title)
+                                  : text.retryStep(step.title)
                               }
                               aria-label={
                                 status === "complete"
-                                  ? `Run ${step.title} again`
-                                  : `Retry ${step.title}`
+                                  ? text.runStepAgain(step.title)
+                                  : text.retryStep(step.title)
                               }
                             >
                               <svg
@@ -313,8 +317,8 @@ export function ResultTabs() {
             <section className="max-h-80 space-y-3 overflow-auto pr-2">
               {session.messages.length === 0 ? (
                 <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
-                  <p>Run an analysis to build a report. Progress and any follow-up questions from the assistant will appear here.</p>
-                  <p className="text-xs">If your query is ambiguous, the assistant may ask for clarification; reply in the input below to refine the final report.</p>
+                  <p>{text.emptyWorkflowMessage}</p>
+                  <p className="text-xs">{text.emptyWorkflowHint}</p>
                 </div>
               ) : (
                 session.messages.map((message, index) => {
@@ -324,10 +328,10 @@ export function ResultTabs() {
                     (message.isClarifyingQuestion === true ||
                       (typeof message.content === "string" && message.content.trim().endsWith("?")));
                   const label = isUser
-                    ? "Your query"
+                    ? text.yourQuery
                     : isClarifying
-                      ? "Assistant (asking for clarification)"
-                      : "Assistant";
+                      ? text.assistantClarifying
+                      : text.assistant;
 
                   return (
                     <div
@@ -345,7 +349,7 @@ export function ResultTabs() {
                         {label}
                       </p>
                       <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-                        {message.content || (isUser ? "…" : "Streaming…")}
+                        {message.content || (isUser ? "…" : text.streaming)}
                       </p>
                     </div>
                   );
@@ -356,7 +360,7 @@ export function ResultTabs() {
         ) : null}
         {activeTab === "answer" ? (
           <article className="whitespace-pre-wrap text-sm leading-7 text-gray-700 dark:text-gray-300">
-            {session.messages[session.messages.length - 1]?.content || "Waiting for final report…"}
+            {session.messages[session.messages.length - 1]?.content || text.waitingFinalReport}
           </article>
         ) : null}
         {activeTab === "evidence" ? <ReferenceList references={session.evidence} /> : null}
@@ -366,7 +370,7 @@ export function ResultTabs() {
         {activeTab === "pharma" ? (
           <div className="space-y-2">
             {session.pharma.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No pharma report loaded yet.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{text.noPharmaYet}</p>
             ) : (
               session.pharma.map((item, idx) => (
                 <div key={`${item.company}-${idx}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-[#4a515c] dark:bg-[#343a43]">

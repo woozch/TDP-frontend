@@ -2,9 +2,13 @@
 
 import { useMemo } from "react";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
+import { useLanguage } from "@/shared/language/language-context";
+import { getUiText } from "@/shared/i18n/ui-messages";
 import { useSendQuery } from "@/features/send-query/model/use-send-query";
 
 export function ChatWorkspace() {
+  const { language } = useLanguage();
+  const text = getUiText(language);
   const session = useChatSessionStore((state) => state.activeSession);
   const { query, setQuery, submit } = useSendQuery();
   const isMac = useMemo(
@@ -15,7 +19,7 @@ export function ChatWorkspace() {
   if (!session) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600 shadow-sm dark:border-[#3a404a] dark:bg-[#2a2f36] dark:text-gray-400">
-        No session found.
+        {text.noSessionFound}
       </div>
     );
   }
@@ -50,13 +54,13 @@ export function ChatWorkspace() {
                 void submit();
               }
             }}
-            placeholder="Enter your query or follow-up to create or update the report..."
+            placeholder={text.queryPlaceholder}
             rows={2}
             className="w-full resize-none rounded-xl border-0 bg-transparent px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:ring-0 dark:text-gray-100 dark:placeholder:text-gray-500"
           />
           {lastIsClarifying ? (
             <p className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-400">
-              The assistant asked for clarification. Reply above to refine the report.
+              {text.clarificationHint}
             </p>
           ) : null}
         </div>
@@ -65,7 +69,7 @@ export function ChatWorkspace() {
           disabled={session.isStreaming}
           className="mb-2 mr-2 shrink-0 self-end rounded-lg bg-[#f69e25] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#e58e1a] disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-200 dark:disabled:bg-gray-600 dark:disabled:text-gray-500"
         >
-          {session.isStreaming ? "…" : "Send"}
+          {session.isStreaming ? "…" : text.send}
         </button>
       </form>
     </section>

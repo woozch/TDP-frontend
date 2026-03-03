@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { streamChatResult } from "@/shared/api/streaming/client";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
+import { useLanguage } from "@/shared/language/language-context";
 
 export function useSendQuery() {
   const [query, setQuery] = useState("");
+  const { language } = useLanguage();
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const startQuery = useChatSessionStore((state) => state.startQuery);
   const appendAnswerToken = useChatSessionStore((state) => state.appendAnswerToken);
@@ -14,6 +16,7 @@ export function useSendQuery() {
   const setPharma = useChatSessionStore((state) => state.setPharma);
   const completeStream = useChatSessionStore((state) => state.completeStream);
   const setError = useChatSessionStore((state) => state.setError);
+  const setSessionLanguage = useChatSessionStore((state) => state.setSessionLanguage);
 
   const submit = async () => {
     const trimmed = query.trim();
@@ -21,6 +24,7 @@ export function useSendQuery() {
       return;
     }
 
+    setSessionLanguage(activeSession.id, language);
     startQuery(trimmed);
     setQuery("");
 
@@ -28,6 +32,7 @@ export function useSendQuery() {
       await streamChatResult({
         query: trimmed,
         sessionId: activeSession.id,
+        language,
         onEvent: (event) => {
           switch (event.type) {
             case "answer.delta":

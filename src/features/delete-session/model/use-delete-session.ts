@@ -2,9 +2,11 @@
 
 import type { SessionDetail, SessionSummary } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
+import { useLanguage } from "@/shared/language/language-context";
 import { useSelectSession } from "@/features/select-session/model/use-select-session";
 
 export function useDeleteSession() {
+  const { language } = useLanguage();
   const removeSession = useChatSessionStore((state) => state.removeSession);
   const setSessions = useChatSessionStore((state) => state.setSessions);
   const activeSession = useChatSessionStore((state) => state.activeSession);
@@ -53,7 +55,7 @@ export function useDeleteSession() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({ language })
       });
       if (!createRes.ok) {
         return;
@@ -65,6 +67,7 @@ export function useDeleteSession() {
         id: created.session.id,
         userId: created.session.userId,
         title: created.session.title,
+        language: created.session.language,
         createdAt: created.session.createdAt,
         updatedAt: created.session.updatedAt
       });

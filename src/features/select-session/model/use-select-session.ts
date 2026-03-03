@@ -36,7 +36,14 @@ export function useSelectSession() {
       if (!response.ok) return;
       const data = (await response.json()) as { session: SessionDetail };
       setActiveSession(data.session);
-      upsertSessionSummary(summary);
+      upsertSessionSummary({
+        id: data.session.id,
+        userId: data.session.userId,
+        title: data.session.title,
+        language: data.session.language,
+        createdAt: data.session.createdAt,
+        updatedAt: data.session.updatedAt
+      });
     } finally {
       setActiveSessionLoading(false);
     }

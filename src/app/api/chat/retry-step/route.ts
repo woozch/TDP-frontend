@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateMockSession } from "@/auth";
+import { normalizeLanguage } from "@/shared/language/language-config";
 import {
   applyEvidence,
   applyGraph,
@@ -14,6 +15,7 @@ type RetryStep = "answer" | "evidence" | "graph" | "pharma";
 interface RetryRequest {
   sessionId?: string;
   step?: RetryStep;
+  language?: string;
 }
 
 const wait = (ms: number) =>
@@ -28,6 +30,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as RetryRequest;
   const sessionId = body.sessionId?.trim();
   const step = body.step;
+  const language = normalizeLanguage(body.language);
 
   if (!sessionId || !step) {
     return NextResponse.json(
@@ -40,13 +43,16 @@ export async function POST(request: Request) {
   await wait(900);
 
   if (step === "answer") {
-    const token = "[Retry] Final report step completed successfully.\n";
+    const token =
+      language === "ko"
+        ? "[재시도] 최종 보고서 단계가 성공적으로 완료되었습니다.\n"
+        : "[Retry] Final report step completed successfully.\n";
     appendAnswerToken(userId, sessionId, token);
     return NextResponse.json({ step, token });
   }
 
   if (step === "evidence") {
-    applyEvidence(userId, sessionId);
+    applyEvidence(userId, sessionId, language);
     const references = getSession(userId, sessionId)?.evidence ?? [];
     return NextResponse.json({ step, references });
   }
@@ -61,7 +67,7 @@ export async function POST(request: Request) {
     });
   }
 
-  applyPharma(userId, sessionId);
+  applyPharma(userId, sessionId, language);
   const items = getSession(userId, sessionId)?.pharma ?? [];
   return NextResponse.json({ step: "pharma", items });
 }

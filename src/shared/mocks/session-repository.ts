@@ -4,11 +4,13 @@ import type {
   SessionSummary
 } from "@contracts/types";
 import {
-  mockEvidence,
+  getMockEvidence,
+  getMockPharmaReport,
   mockGraphEdges,
   mockGraphNodes,
-  mockPharmaReport
 } from "@/shared/mocks/data";
+import type { Language } from "@/shared/language/language-config";
+import { DEFAULT_LANGUAGE } from "@/shared/language/language-config";
 
 type TdpGlobalStore = typeof globalThis & {
   __tdpUserSessions?: Map<string, SessionDetail[]>;
@@ -19,6 +21,13 @@ const userSessions =
   globalStore.__tdpUserSessions ?? (globalStore.__tdpUserSessions = new Map<string, SessionDetail[]>());
 
 const nowIso = () => new Date().toISOString();
+
+const ensureSessionLanguage = (session: SessionDetail): SessionDetail => {
+  if (!session.language) {
+    session.language = DEFAULT_LANGUAGE;
+  }
+  return session;
+};
 
 const buildMessage = (role: ChatMessage["role"], content: string): ChatMessage => ({
   id: `${role}-${crypto.randomUUID()}`,
@@ -31,6 +40,7 @@ const toSummary = (session: SessionDetail): SessionSummary => ({
   id: session.id,
   userId: session.userId,
   title: session.title,
+  language: session.language ?? DEFAULT_LANGUAGE,
   createdAt: session.createdAt,
   updatedAt: session.updatedAt
 });
@@ -46,6 +56,7 @@ function ensureUserSessions(userId: string): SessionDetail[] {
       id: `session-${crypto.randomUUID()}`,
       userId,
       title: "Welcome analysis session",
+      language: DEFAULT_LANGUAGE,
       createdAt: nowIso(),
       updatedAt: nowIso(),
       messages: [
@@ -54,10 +65,10 @@ function ensureUserSessions(userId: string): SessionDetail[] {
           "Sign in complete. Start a new target discovery query when ready.\n\nThis session includes sample evidence, graph, and pharma data so you can explore the UI without running a query."
         )
       ],
-      evidence: [...mockEvidence],
+      evidence: [...getMockEvidence("en")],
       graphNodes: [...mockGraphNodes],
       graphEdges: [...mockGraphEdges],
-      pharma: [...mockPharmaReport]
+      pharma: [...getMockPharmaReport("en")]
     }
   ];
 
@@ -74,7 +85,8 @@ export function listSessions(userId: string): SessionSummary[] {
 export function getSession(userId: string, sessionId: string): SessionDetail | undefined {
   const sessions = userSessions.get(userId);
   if (!sessions) return undefined;
-  return sessions.find((session) => session.id === sessionId);
+  const session = sessions.find((item) => item.id === sessionId);
+  return session ? ensureSessionLanguage(session) : undefined;
 }
 
 /**
@@ -88,12 +100,13 @@ export function getOrCreateSessionById(userId: string, sessionId: string): Sessi
   if (existing) return existing;
   const sessions = ensureUserSessions(userId);
   const match = sessions.find((s) => s.id === sessionId);
-  if (match) return match;
+  if (match) return ensureSessionLanguage(match);
   const now = nowIso();
   const created: SessionDetail = {
     id: sessionId,
     userId,
     title: "New discovery session",
+    language: DEFAULT_LANGUAGE,
     createdAt: now,
     updatedAt: now,
     messages: [],
@@ -106,13 +119,14 @@ export function getOrCreateSessionById(userId: string, sessionId: string): Sessi
   return created;
 }
 
-export function createSession(userId: string, title?: string): SessionDetail {
+export function createSession(userId: string, title?: string, language: Language = DEFAULT_LANGUAGE): SessionDetail {
   const sessions = ensureUserSessions(userId);
   const createdAt = nowIso();
   const created: SessionDetail = {
     id: `session-${crypto.randomUUID()}`,
     userId,
     title: title?.trim() ? title.trim() : "New discovery session",
+    language,
     createdAt,
     updatedAt: createdAt,
     messages: [],
@@ -138,7 +152,12 @@ export function deleteSession(userId: string, sessionId: string): boolean {
   return true;
 }
 
-export function beginStreamQuery(userId: string, sessionId: string, query: string): SessionDetail {
+export function beginStreamQuery(
+  userId: string,
+  sessionId: string,
+  query: string,
+  language: Language
+): SessionDetail {
   const session = getSession(userId, sessionId);
   if (!session) {
     throw new Error("Session not found");
@@ -146,6 +165,7 @@ export function beginStreamQuery(userId: string, sessionId: string, query: strin
 
   session.messages.push(buildMessage("user", query));
   session.messages.push(buildMessage("assistant", ""));
+  session.language = language;
   session.evidence = [];
   session.graphNodes = [];
   session.graphEdges = [];
@@ -167,12 +187,39 @@ export function appendAnswerToken(userId: string, sessionId: string, token: stri
   session.updatedAt = nowIso();
 }
 
-export function applyEvidence(userId: string, sessionId: string): void {
+export function updateSessionTitle(userId: string, sessionId: string, title: string): SessionDetail | undefined {
+  const session = getSession(userId, sessionId);
+  if (!session) {
+    return undefined;
+  }
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return session;
+  }
+  session.title = trimmed;
+  session.updatedAt = nowIso();
+  return session;
+}
+
+export function buildRecommendedSessionTitle(query: string, language: Language): string {
+  const compact = query.replace(/\s+/g, " ").trim();
+  if (!compact) {
+    return language === "ko" ? "새 분석 리포트" : "New analysis report";
+  }
+  const maxLength = 52;
+  if (compact.length <= maxLength) {
+    return compact;
+  }
+  const shortened = compact.slice(0, maxLength - 1).trimEnd();
+  return `${shortened}\u2026`;
+}
+
+export function applyEvidence(userId: string, sessionId: string, language: Language = "en"): void {
   const session = getSession(userId, sessionId);
   if (!session) {
     return;
   }
-  session.evidence = mockEvidence;
+  session.evidence = getMockEvidence(language);
   session.updatedAt = nowIso();
 }
 
@@ -186,11 +233,11 @@ export function applyGraph(userId: string, sessionId: string): void {
   session.updatedAt = nowIso();
 }
 
-export function applyPharma(userId: string, sessionId: string): void {
+export function applyPharma(userId: string, sessionId: string, language: Language = "en"): void {
   const session = getSession(userId, sessionId);
   if (!session) {
     return;
   }
-  session.pharma = mockPharmaReport;
+  session.pharma = getMockPharmaReport(language);
   session.updatedAt = nowIso();
 }

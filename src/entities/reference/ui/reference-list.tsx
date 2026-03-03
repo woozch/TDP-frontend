@@ -2,12 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { EvidenceItem, ReferenceDetail } from "@contracts/types";
+import { useLanguage } from "@/shared/language/language-context";
+import { getUiText } from "@/shared/i18n/ui-messages";
 
 interface Props {
   references: EvidenceItem[];
 }
 
 export function ReferenceList({ references }: Props) {
+  const { language } = useLanguage();
+  const text = getUiText(language);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ReferenceDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,9 +34,9 @@ export function ReferenceList({ references }: Props) {
 
     const loadDetail = async () => {
       try {
-        const response = await fetch(`/api/references/${currentId}`);
+        const response = await fetch(`/api/references/${currentId}?language=${encodeURIComponent(language)}`);
         if (!response.ok) {
-          throw new Error("Failed to load reference detail");
+          throw new Error(text.loadReferenceFailed);
         }
         const payload = (await response.json()) as ReferenceDetail;
         if (!cancelled) {
@@ -55,10 +59,10 @@ export function ReferenceList({ references }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [selected?.id]);
+  }, [language, selected?.id]);
 
   if (references.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">No evidence loaded yet.</p>;
+    return <p className="text-sm text-gray-500 dark:text-gray-400">{text.noEvidenceYet}</p>;
   }
 
   return (
@@ -81,7 +85,7 @@ export function ReferenceList({ references }: Props) {
       {selected ? (
         <article className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-[#4a515c] dark:bg-[#343a43]">
           <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{detail?.title ?? selected.title}</h4>
-          {isLoading ? <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading abstract...</p> : null}
+          {isLoading ? <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{text.loadingAbstract}</p> : null}
           {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
           {!isLoading && !error ? (
             <>
@@ -101,7 +105,7 @@ export function ReferenceList({ references }: Props) {
             target="_blank"
             rel="noreferrer"
           >
-            Open source
+            {text.openSource}
           </a>
         </article>
       ) : null}

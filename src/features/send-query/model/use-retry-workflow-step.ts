@@ -2,6 +2,7 @@
 
 import type { EvidenceItem, GraphEdge, GraphNode, PharmaReportItem, TabKey } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
+import { useLanguage } from "@/shared/language/language-context";
 
 type RetryStep = Exclude<TabKey, "chat">;
 
@@ -12,6 +13,7 @@ type RetryResponse =
   | { step: "pharma"; items: PharmaReportItem[] };
 
 export function useRetryWorkflowStep() {
+  const { language } = useLanguage();
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const appendAnswerToken = useChatSessionStore((state) => state.appendAnswerToken);
   const setEvidence = useChatSessionStore((state) => state.setEvidence);
@@ -39,7 +41,8 @@ export function useRetryWorkflowStep() {
         },
         body: JSON.stringify({
           sessionId: activeSession.id,
-          step
+          step,
+          language
         })
       });
 

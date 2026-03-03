@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/shared/theme/theme-context";
+import { LanguageProvider } from "@/shared/language/language-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -38,9 +39,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ThemeProvider>
-      <SessionProvider>{children}</SessionProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <SessionProvider>{children}</SessionProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
 

@@ -67,7 +67,11 @@ type UiText = {
   loadReferenceFailed: string;
   openSource: string;
   signinDescription: string;
-  mockSignIn: string;
+  googleAccessDenied: string;
+  googleOAuthCallbackError: string;
+  googleProviderNotConfigured: string;
+  googleSignInFailed: string;
+  devSignIn: string;
   closeMenu: string;
   openMenu: string;
   closeSettings: string;
@@ -148,8 +152,15 @@ const en: UiText = {
   loadingAbstract: "Loading abstract...",
   loadReferenceFailed: "Failed to load reference detail",
   openSource: "Open source",
-  signinDescription: "Use mock sign in for local development, or Google when configured.",
-  mockSignIn: "Mock sign in",
+  signinDescription: "Use Development sign in for local development, or Google when configured.",
+  googleAccessDenied:
+    "This Google account is not authorized. Ask admin to register your company domain or personal email.",
+  googleOAuthCallbackError:
+    "Google OAuth callback failed. Verify GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and redirect URI in Google Cloud.",
+  googleProviderNotConfigured:
+    "Google sign-in is not configured on this server. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+  googleSignInFailed: "Google sign-in failed. Please try again.",
+  devSignIn: "Development sign in",
   closeMenu: "Close menu",
   openMenu: "Open menu",
   closeSettings: "Close settings",
@@ -230,8 +241,15 @@ const ko: UiText = {
   loadingAbstract: "초록을 불러오는 중...",
   loadReferenceFailed: "참고문헌 상세를 불러오지 못했습니다",
   openSource: "원문 열기",
-  signinDescription: "로컬 개발에서는 Mock 로그인, 설정된 경우 Google 로그인을 사용하세요.",
-  mockSignIn: "Mock 로그인",
+  signinDescription: "로컬 개발에서는 Development 로그인, 설정된 경우 Google 로그인을 사용하세요.",
+  googleAccessDenied:
+    "이 Google 계정은 접근 권한이 없습니다. 관리자에게 회사 도메인 또는 개인 이메일 등록을 요청하세요.",
+  googleOAuthCallbackError:
+    "Google OAuth 콜백에 실패했습니다. Google Cloud의 redirect URI와 GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET를 확인하세요.",
+  googleProviderNotConfigured:
+    "이 서버에 Google 로그인이 설정되지 않았습니다. GOOGLE_CLIENT_ID와 GOOGLE_CLIENT_SECRET을 설정하세요.",
+  googleSignInFailed: "Google 로그인에 실패했습니다. 다시 시도해 주세요.",
+  devSignIn: "Development 로그인",
   closeMenu: "메뉴 닫기",
   openMenu: "메뉴 열기",
   closeSettings: "설정 닫기",

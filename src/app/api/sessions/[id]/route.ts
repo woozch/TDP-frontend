@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrCreateMockSession } from "@/auth";
+import { getOrCreateDevSession } from "@/auth";
 import {
   deleteSession,
   getOrCreateSessionById,
@@ -15,7 +15,7 @@ interface UpdateSessionRequest {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const login = await getOrCreateMockSession();
+  const login = await getOrCreateDevSession();
   const userId = login.user.email;
 
   const { id } = await params;
@@ -24,7 +24,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
-  const login = await getOrCreateMockSession();
+  const login = await getOrCreateDevSession();
   const userId = login.user.email;
 
   const { id } = await params;
@@ -37,7 +37,7 @@ export async function DELETE(_: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const login = await getOrCreateMockSession();
+  const login = await getOrCreateDevSession();
   const userId = login.user.email;
   const body = (await request.json().catch(() => ({}))) as UpdateSessionRequest;
   const nextTitle = body.title?.trim();

@@ -1,0 +1,15 @@
+{
+  "companies": [
+    {
+      "name": "Gradiant Bio",
+      "domains": ["gradiantbio.com"],
+      "enabled": true
+    }
+  ],
+  "users": [
+    {
+      "email": "researcher.personal@gmail.com",
+      "enabled": true
+    }
+  ]
+}

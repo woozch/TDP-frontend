@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrCreateMockSession } from "@/auth";
+import { getOrCreateDevSession } from "@/auth";
 import { normalizeLanguage } from "@/shared/language/language-config";
 import {
   applyEvidence,
@@ -24,7 +24,7 @@ const wait = (ms: number) =>
   });
 
 export async function POST(request: Request) {
-  const login = await getOrCreateMockSession();
+  const login = await getOrCreateDevSession();
   const userId = login.user.email;
 
   const body = (await request.json().catch(() => ({}))) as RetryRequest;

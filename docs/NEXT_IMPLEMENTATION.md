@@ -17,7 +17,7 @@
 
 | 작업 | 설명 | 우선순위 |
 |------|------|----------|
-| **세션 API 인증 검증** | Next.js API routes에서 `getOrCreateMockSession()` 대신 실제 `auth()` 사용 시 비인증 요청 401 반환 (프로덕션 준비) | 중 |
+| **세션 API 인증 검증** | Next.js API routes에서 `getOrCreateDevSession()` 대신 실제 `auth()` 사용 시 비인증 요청 401 반환 (프로덕션 준비) | 중 |
 | **환경 변수 문서화** | `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, (선택) `GOOGLE_*` 등 필요한 env를 README 또는 `.env.example` 에 정리 | 중 |
 | **프로덕션 auth 옵션** | Credentials mock 외에 Google 등 실제 provider 사용 시 설정 가이드 | 낮 |
 

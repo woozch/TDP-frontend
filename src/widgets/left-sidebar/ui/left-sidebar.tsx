@@ -18,6 +18,14 @@ interface LeftSidebarProps {
   onRetryLoad?: () => void;
 }
 
+function getInitial(value: string | null | undefined): string {
+  if (!value) {
+    return "?";
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
+}
+
 export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSidebarProps) {
   const { language } = useLanguage();
   const text = getUiText(language);
@@ -37,6 +45,8 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const [googleSignInError, setGoogleSignInError] = useState<string | null>(null);
+  const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
 
   const handleSelectSession = (session: (typeof sessions)[0]) => {
@@ -323,8 +333,27 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
       <div className="mt-4 shrink-0 space-y-2 border-t border-gray-200 pt-4 dark:border-[#3a404a]">
         <section className="rounded-lg border border-gray-200 bg-white p-3 dark:border-[#3a404a] dark:bg-[#2a2f36]">
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{text.user}</p>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{authSession?.user?.name ?? text.notSignedIn}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{authSession?.user?.email ?? text.googleLoginRequired}</p>
+          <div className="mt-2 flex items-center gap-2">
+            {authSession?.user?.image ? (
+              <img
+                src={authSession.user.image}
+                alt={authSession.user.name ?? text.user}
+                className="h-9 w-9 rounded-full border border-gray-200 object-cover dark:border-[#4a515c]"
+              />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f69e25]/15 text-sm font-semibold text-[#c47a1a] dark:bg-[#f69e25]/20 dark:text-[#f69e25]">
+                {getInitial(authSession?.user?.name ?? authSession?.user?.email)}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {authSession?.user?.name ?? text.notSignedIn}
+              </p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                {authSession?.user?.email ?? text.googleLoginRequired}
+              </p>
+            </div>
+          </div>
         </section>
         <button
           type="button"
@@ -333,12 +362,44 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
               void signOut({ callbackUrl: "/signin" });
               return;
             }
-            void signIn("google", { callbackUrl: "/chat" });
+            void (async () => {
+              if (isSigningInWithGoogle) {
+                return;
+              }
+              setIsSigningInWithGoogle(true);
+              setGoogleSignInError(null);
+              try {
+                const response = await fetch("/api/auth/providers", { method: "GET" });
+                if (!response.ok) {
+                  setGoogleSignInError(text.googleSignInFailed);
+                  setIsSigningInWithGoogle(false);
+                  return;
+                }
+                const providers = (await response.json()) as Record<string, unknown>;
+                if (!providers.google) {
+                  setGoogleSignInError(text.googleProviderNotConfigured);
+                  setIsSigningInWithGoogle(false);
+                  return;
+                }
+                await signIn("google", { callbackUrl: "/chat" });
+              } catch {
+                setGoogleSignInError(text.googleSignInFailed);
+                setIsSigningInWithGoogle(false);
+              }
+            })();
           }}
+          disabled={!authSession?.user && isSigningInWithGoogle}
           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:border-[#f69e25] hover:text-[#f69e25] dark:border-[#4a515c] dark:bg-[#2a2f36] dark:text-gray-300 dark:hover:border-[#f69e25] dark:hover:text-[#f69e25]"
         >
-          {authSession?.user ? text.signOut : text.signInWithGoogle}
+          {authSession?.user
+            ? text.signOut
+            : isSigningInWithGoogle
+              ? `${text.signInWithGoogle}...`
+              : text.signInWithGoogle}
         </button>
+        {!authSession?.user && googleSignInError ? (
+          <p className="text-xs text-red-600 dark:text-red-400">{googleSignInError}</p>
+        ) : null}
       </div>
 
       {/* Delete report confirmation modal (portal so it appears above overlay on mobile) */}

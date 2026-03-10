@@ -5,6 +5,7 @@ import { useLoadSession } from "@/features/load-session/model/use-load-session";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
+import { AppLogo } from "@/shared/ui/app-logo";
 import { LeftSidebar } from "@/widgets/left-sidebar";
 import { ChatWorkspace } from "@/widgets/chat-workspace";
 import { ResultTabs } from "@/widgets/result-tabs";
@@ -38,7 +39,12 @@ export function ChatPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">{text.appName}</h1>
+          <div className="flex items-center gap-2">
+            <AppLogo size={30} />
+            <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">
+              {text.appName}
+            </h1>
+          </div>
         </div>
         <HeaderSettings />
       </header>

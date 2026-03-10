@@ -5,8 +5,8 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
-import { AppLogo } from "@/shared/ui/app-logo";
 import { HeaderSettings } from "@/widgets/header-settings";
+import signInBackground from "@/shared/assets/images/signin-background.png";
 
 export function SignInPage() {
   const { language } = useLanguage();
@@ -59,15 +59,24 @@ export function SignInPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-gray-100 dark:bg-[#171a1f]">
-      <header className="flex h-12 shrink-0 items-center justify-end border-b border-gray-200 bg-white/95 px-4 dark:border-[#3a404a] dark:bg-[#171a1f]/95">
+    <main className="relative flex min-h-screen flex-col overflow-hidden">
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${signInBackground.src})`,
+            filter: "brightness(0.82)"
+          }}
+        />
+      </div>
+
+      <header className="flex h-12 shrink-0 items-center justify-end border-b border-gray-200 bg-white/95 px-4 dark:border-white/10 dark:bg-[#171a1f]/60 dark:backdrop-blur-md">
         <HeaderSettings />
       </header>
       <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-[#3a404a] dark:bg-[#2a2f36]">
+        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-white/10 dark:bg-[#2a2f36]/80 dark:shadow-xl dark:backdrop-blur-md">
           <div className="text-center">
             <h1 className="flex items-center justify-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
-              <AppLogo size={36} />
               <span>{text.appName}</span>
             </h1>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">

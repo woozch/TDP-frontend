@@ -156,7 +156,7 @@ const en: UiText = {
   loadingAbstract: "Loading abstract...",
   loadReferenceFailed: "Failed to load reference detail",
   openSource: "Open source",
-  signinDescription: "Use Development sign in for local development, or Google when configured.",
+  signinDescription: "Where Lab-Proven Data Meets AI Insight: Precision Target Discovery Platform",
   googleAccessDenied:
     "This Google account is not authorized. Ask admin to register your company domain or personal email.",
   googleOAuthCallbackError:
@@ -248,7 +248,7 @@ const ko: UiText = {
   loadingAbstract: "초록을 불러오는 중...",
   loadReferenceFailed: "참고문헌 상세를 불러오지 못했습니다",
   openSource: "원문 열기",
-  signinDescription: "로컬 개발에서는 Development 로그인, 설정된 경우 Google 로그인을 사용하세요.",
+  signinDescription: "실험실의 실증 데이터와 AI의 통찰이 만나는 정밀 타겟 발굴 플랫폼",
   googleAccessDenied:
     "이 Google 계정은 접근 권한이 없습니다. 관리자에게 회사 도메인 또는 개인 이메일 등록을 요청하세요.",
   googleOAuthCallbackError:

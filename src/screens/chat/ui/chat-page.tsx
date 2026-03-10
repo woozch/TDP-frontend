@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useActiveTab } from "@/features/select-tab/model/use-active-tab";
 import { useLoadSession } from "@/features/load-session/model/use-load-session";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
@@ -12,6 +13,7 @@ import { ResultTabs } from "@/widgets/result-tabs";
 import { HeaderSettings } from "@/widgets/header-settings";
 
 export function ChatPage() {
+  const { activeTab } = useActiveTab();
   const { language } = useLanguage();
   const text = getUiText(language);
   const { retry } = useLoadSession(true);
@@ -94,9 +96,11 @@ export function ChatPage() {
               <ResultTabs />
             )}
           </div>
-          <div className="sticky bottom-0 mt-4 shrink-0 border-t border-gray-200 bg-[#fafafa] pt-4 dark:border-[#3a404a] dark:bg-[#171a1f]">
-            <ChatWorkspace />
-          </div>
+          {activeTab === "chat" ? (
+            <div className="sticky bottom-0 mt-4 shrink-0 border-t border-gray-200 bg-[#fafafa] pt-4 dark:border-[#3a404a] dark:bg-[#171a1f]">
+              <ChatWorkspace />
+            </div>
+          ) : null}
         </section>
       </div>
     </main>

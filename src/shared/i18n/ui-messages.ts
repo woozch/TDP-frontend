@@ -82,6 +82,10 @@ type UiText = {
   apply: string;
   editTitle: string;
   save: string;
+  reportNavPrev: string;
+  reportNavNext: string;
+  reportPageOf: (current: number, total: number) => string;
+  reportReadyInTab: string;
 };
 
 const en: UiText = {
@@ -168,10 +172,13 @@ const en: UiText = {
   theme: "Theme",
   language: "Language",
   reset: "Reset",
-  apply: "Apply"
-  ,
+  apply: "Apply",
   editTitle: "Edit title",
-  save: "Save"
+  save: "Save",
+  reportNavPrev: "Previous report",
+  reportNavNext: "Next report",
+  reportPageOf: (current, total) => `${current} of ${total}`,
+  reportReadyInTab: "Report ready. View in Final Report tab.",
 };
 
 const ko: UiText = {
@@ -257,10 +264,13 @@ const ko: UiText = {
   theme: "테마",
   language: "언어",
   reset: "초기화",
-  apply: "적용"
-  ,
+  apply: "적용",
   editTitle: "제목 수정",
-  save: "저장"
+  save: "저장",
+  reportNavPrev: "이전 리포트",
+  reportNavNext: "다음 리포트",
+  reportPageOf: (current, total) => `${current} / ${total}`,
+  reportReadyInTab: "리포트가 준비되었습니다. 최종 리포트 탭에서 확인하세요.",
 };
 
 export function getUiText(language: Language): UiText {

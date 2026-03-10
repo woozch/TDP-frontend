@@ -189,8 +189,48 @@ export async function POST(request: Request) {
 
           const completionToken =
             language === "ko"
-              ? "통합 최종 보고서가 준비되었습니다. Final Report, Evidence, Gene Graph, Pharma Report 탭을 확인하세요.\n"
-              : "Integrated final report is ready. Review Final Report, Evidence, Gene Graph, and Pharma Report tabs.\n";
+              ? `
+## 최종 리포트
+
+### Query
+- ${query}
+
+### Executive Summary
+- 질의와 연관된 핵심 타겟/경로를 우선 정리했습니다.
+- 근거 문헌 기반으로 신뢰도 높은 시그널을 먼저 반영했습니다.
+- 하위 단계별 산출물(Evidence, Gene Graph, Pharma Report)을 통합했습니다.
+
+### Key Findings
+1. 근거 데이터에서 반복적으로 관찰되는 타겟 축이 존재합니다.
+2. 그래프 상 상호작용 강도가 높은 노드들이 우선 검토 후보입니다.
+3. 파마 파이프라인은 적응증/임상단계 관점에서 차별화 포인트가 보입니다.
+
+### Next Actions
+- Evidence 탭에서 핵심 레퍼런스의 원문 신뢰도를 확인합니다.
+- Gene Graph 탭에서 중심 노드와 confidence edge를 재검증합니다.
+- Pharma Report 탭에서 경쟁사 파이프라인 및 stage 변화를 비교합니다.
+`
+              : `
+## Final report
+
+### Query
+- ${query}
+
+### Executive summary
+- Prioritize target/pathway signals most relevant to the query.
+- Anchor conclusions to evidence-backed signals first.
+- Integrate Evidence, Gene Graph, and Pharma outputs into one report.
+
+### Key findings
+1. Evidence highlights recurring high-signal target axes.
+2. Graph centrality surfaces candidate nodes for deeper validation.
+3. Pharma pipeline data shows indication- and stage-level differentiation.
+
+### Next actions
+- Validate source quality and recency in the Evidence tab.
+- Re-check high-confidence relationships in the Gene Graph tab.
+- Compare competitor pipeline shifts in the Pharma Report tab.
+`;
           appendAnswerToken(
             userId,
             sessionId,

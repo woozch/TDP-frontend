@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { TabKey, TabStatus } from "@contracts/types";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
@@ -86,6 +88,143 @@ function TabStatusIndicator({ status }: { status: TabStatus }) {
         />
       </svg>
     </span>
+  );
+}
+
+function FinalReportMarkdown({ content }: { content: string }) {
+  return (
+    <div className="space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-300">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => (
+            <h1 className="mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="mt-3 text-base font-semibold text-gray-900 dark:text-gray-100">{children}</h3>
+          ),
+          p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc space-y-1 pl-5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5">{children}</ol>,
+          li: ({ children }) => <li>{children}</li>,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-[#f69e25]/60 pl-3 italic text-gray-600 dark:text-gray-300">
+              {children}
+            </blockquote>
+          ),
+          a: ({ href, children }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-[#c47a1a] underline decoration-[#f69e25]/50 underline-offset-2 hover:text-[#f69e25] dark:text-[#f69e25]"
+            >
+              {children}
+            </a>
+          ),
+          code: ({ children }) => (
+            <code className="rounded bg-gray-100 px-1 py-0.5 text-[0.85em] dark:bg-[#343a43]">
+              {children}
+            </code>
+          ),
+          pre: ({ children }) => (
+            <pre className="overflow-x-auto rounded-md bg-gray-100 p-2 text-xs dark:bg-[#171a1f]">
+              {children}
+            </pre>
+          )
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+function FinalReportCarousel({
+  messages,
+  text,
+}: {
+  messages: { id: string; role: string; content: string; isClarifyingQuestion?: boolean }[];
+  text: ReturnType<typeof getUiText>;
+}) {
+  const reportMessages = useMemo(
+    () =>
+      messages.filter(
+        (m) => m.role === "assistant" && m.isClarifyingQuestion !== true
+      ),
+    [messages]
+  );
+
+  const [currentIndex, setCurrentIndex] = useState(
+    Math.max(0, reportMessages.length - 1)
+  );
+
+  useEffect(() => {
+    if (reportMessages.length > 0) {
+      setCurrentIndex(reportMessages.length - 1);
+    }
+  }, [reportMessages.length]);
+
+  const clampedIndex = Math.min(
+    Math.max(0, currentIndex),
+    Math.max(0, reportMessages.length - 1)
+  );
+  const currentReport = reportMessages[clampedIndex];
+  const total = reportMessages.length;
+  const canPrev = clampedIndex > 0;
+  const canNext = clampedIndex < total - 1;
+
+  return (
+    <article className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <FinalReportMarkdown
+          content={
+            currentReport?.content?.trim() || text.waitingFinalReport
+          }
+        />
+      </div>
+      {total > 1 ? (
+        <nav
+          className="flex shrink-0 items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 dark:border-[#4a515c] dark:bg-[#2a2f36]"
+          aria-label="Report navigation"
+        >
+          <button
+            type="button"
+            onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+            disabled={!canPrev}
+            aria-label={text.reportNavPrev}
+            title={text.reportNavPrev}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-[#4a515c] dark:text-gray-300 dark:hover:bg-[#343a43] dark:disabled:opacity-40"
+          >
+            <span aria-hidden>&lt;</span>
+          </button>
+          <span className="text-gray-400 dark:text-gray-500" aria-hidden>
+            |
+          </span>
+          <span className="min-w-16 text-center text-xs font-medium text-gray-600 dark:text-gray-400">
+            {text.reportPageOf(clampedIndex + 1, total)}
+          </span>
+          <span className="text-gray-400 dark:text-gray-500" aria-hidden>
+            |
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentIndex((i) => Math.min(total - 1, i + 1))
+            }
+            disabled={!canNext}
+            aria-label={text.reportNavNext}
+            title={text.reportNavNext}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-[#4a515c] dark:text-gray-300 dark:hover:bg-[#343a43] dark:disabled:opacity-40"
+          >
+            <span aria-hidden>&gt;</span>
+          </button>
+        </nav>
+      ) : null}
+    </article>
   );
 }
 
@@ -195,7 +334,7 @@ export function ResultTabs() {
         ) : null}
       </div>
 
-      <div className="relative z-0 min-h-52 flex-1 p-4 pt-0 text-gray-800 dark:text-gray-200">
+      <div className="relative z-0 flex min-h-0 flex-1 flex-col p-4 pt-0 text-gray-800 dark:text-gray-200">
         {activeTab === "chat" ? (
           <div className="space-y-4">
             {session.workflowStarted ? (
@@ -327,11 +466,23 @@ export function ResultTabs() {
                     !isUser &&
                     (message.isClarifyingQuestion === true ||
                       (typeof message.content === "string" && message.content.trim().endsWith("?")));
+                  const isReport = !isUser && !isClarifying;
+                  const isLastMessage = index === session.messages.length - 1;
+                  const isStreamingReport =
+                    isReport && isLastMessage && session.isStreaming;
                   const label = isUser
                     ? text.yourQuery
                     : isClarifying
                       ? text.assistantClarifying
                       : text.assistant;
+
+                  const chatContent = isUser
+                    ? message.content || "…"
+                    : isClarifying
+                      ? message.content || ""
+                      : isStreamingReport
+                        ? text.streaming
+                        : text.reportReadyInTab;
 
                   return (
                     <div
@@ -349,7 +500,7 @@ export function ResultTabs() {
                         {label}
                       </p>
                       <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-                        {message.content || (isUser ? "…" : text.streaming)}
+                        {chatContent}
                       </p>
                     </div>
                   );
@@ -359,9 +510,7 @@ export function ResultTabs() {
           </div>
         ) : null}
         {activeTab === "answer" ? (
-          <article className="whitespace-pre-wrap text-sm leading-7 text-gray-700 dark:text-gray-300">
-            {session.messages[session.messages.length - 1]?.content || text.waitingFinalReport}
-          </article>
+          <FinalReportCarousel messages={session.messages} text={text} />
         ) : null}
         {activeTab === "evidence" ? <ReferenceList references={session.evidence} /> : null}
         {activeTab === "graph" ? (

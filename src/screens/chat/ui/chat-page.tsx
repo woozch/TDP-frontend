@@ -29,11 +29,11 @@ export function ChatPage() {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <header className="z-40 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-[#3a404a] dark:bg-[#171a1f]/95 md:px-6">
+      <header className="z-40 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/95 md:px-6">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setSidebarOpen((open) => !open)}
             className="rounded p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200 md:hidden"
             aria-label={text.openMenu}
           >
@@ -65,7 +65,7 @@ export function ChatPage() {
         {/* Sidebar: drawer on mobile, always visible on md+ */}
         <div
           className={`
-            fixed left-0 top-12 bottom-0 z-20 flex w-72 min-h-0 flex-col bg-white shadow-xl transition-transform duration-200 ease-out dark:bg-[#171a1f]
+            fixed left-0 top-12 bottom-0 z-40 flex w-72 min-h-0 flex-col bg-white shadow-xl transition-transform duration-200 ease-out dark:bg-gray-800
             md:static md:top-auto md:min-h-0 md:overflow-hidden md:shadow-none md:transition-none
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           `}
@@ -81,11 +81,11 @@ export function ChatPage() {
           <div className="min-h-0 flex-1">
             {showMainLoading ? (
               <div
-                className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-16 dark:border-[#3a404a] dark:bg-[#2a2f36]"
+                className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-16 dark:border-gray-700 dark:bg-gray-800"
                 aria-busy="true"
                 aria-live="polite"
               >
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#f69e25] border-t-transparent" />
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {sessionsLoading && sessions.length === 0
                     ? text.loadingReportHistory
@@ -97,7 +97,7 @@ export function ChatPage() {
             )}
           </div>
           {activeTab === "chat" ? (
-            <div className="sticky bottom-0 mt-4 shrink-0 border-t border-gray-200 bg-[#fafafa] pt-4 dark:border-[#3a404a] dark:bg-[#171a1f]">
+            <div className="sticky bottom-0 mt-4 shrink-0 border-t border-gray-200 bg-gray-50 pt-4 dark:border-gray-700 dark:bg-gray-800">
               <ChatWorkspace />
             </div>
           ) : null}

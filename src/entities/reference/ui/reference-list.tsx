@@ -73,7 +73,7 @@ export function ReferenceList({ references }: Props) {
             key={item.id}
             type="button"
             onClick={() => setSelectedId(item.id)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition hover:border-[#f69e25] hover:bg-[#f69e25]/5 dark:border-[#4a515c] dark:bg-[#343a43] dark:hover:border-[#f69e25] dark:hover:bg-[#f69e25]/10"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition hover:border-brand hover:bg-brand/5 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-brand dark:hover:bg-brand/10"
           >
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.title}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -83,7 +83,7 @@ export function ReferenceList({ references }: Props) {
         ))}
       </div>
       {selected ? (
-        <article className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-[#4a515c] dark:bg-[#343a43]">
+        <article className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
           <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{detail?.title ?? selected.title}</h4>
           {isLoading ? <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{text.loadingAbstract}</p> : null}
           {error ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
@@ -100,7 +100,7 @@ export function ReferenceList({ references }: Props) {
             </>
           ) : null}
           <a
-            className="mt-3 inline-block text-xs font-medium text-[#f69e25] underline hover:text-[#e58e1a] dark:text-[#f69e25]"
+            className="mt-3 inline-block text-xs font-medium text-brand underline hover:text-brand-hover dark:text-brand"
             href={selected.url}
             target="_blank"
             rel="noreferrer"

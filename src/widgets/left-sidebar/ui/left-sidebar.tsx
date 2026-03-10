@@ -130,31 +130,18 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
   return (
     <aside
       ref={sidebarRef}
-      className="flex h-full w-full max-w-xs flex-col border-r border-gray-200 bg-gray-50/80 p-4 dark:border-[#3a404a] dark:bg-[#171a1f]/80"
+      className="flex h-full w-full max-w-xs flex-col border-r border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-800/80"
     >
-      {onClose ? (
-        <div className="mb-3 flex items-center justify-end md:hidden">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded p-2 text-gray-500 hover:bg-gray-200 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-            aria-label={text.closeMenu}
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      ) : null}
-
       <section className="flex-1 min-h-0 overflow-y-auto">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{text.reportHistory}</p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            {text.reportHistory}
+          </p>
           <button
             type="button"
             onClick={() => void createSession()}
             disabled={sessionsLoading}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:border-[#f69e25] hover:text-[#f69e25] disabled:opacity-50 dark:border-[#4a515c] dark:bg-[#2a2f36] dark:text-gray-300 dark:hover:border-[#f69e25] dark:hover:text-[#f69e25]"
+            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:border-brand hover:text-brand disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-brand dark:hover:text-brand"
           >
             {text.newReport}
           </button>
@@ -181,7 +168,7 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-16 animate-pulse rounded-lg border border-gray-200 bg-gray-100 dark:border-[#3a404a] dark:bg-[#2a2f36]"
+                className="h-16 animate-pulse rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"
               />
             ))}
           </div>
@@ -195,8 +182,8 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
                 key={session.id}
                 className={`flex items-center gap-2 rounded-lg border p-3 transition ${
                   isActive
-                    ? "border-[#f69e25] bg-[#f69e25]/10 dark:bg-[#f69e25]/15"
-                    : "border-gray-200 bg-white hover:border-[#f69e25] hover:bg-[#f69e25]/5 dark:border-[#3a404a] dark:bg-[#2a2f36] dark:hover:border-[#f69e25] dark:hover:bg-[#f69e25]/10"
+                    ? "border-brand bg-brand/10 dark:bg-brand/15"
+                    : "border-gray-200 bg-white hover:border-brand hover:bg-brand/5 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-brand dark:hover:bg-brand/10"
                 }`}
               >
                 {isEditing ? (
@@ -215,7 +202,7 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
                         setEditingSessionId(null);
                         setEditingTitle("");
                       }}
-                      className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 outline-none focus:border-[#f69e25] dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-100"
+                      className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 outline-none focus:border-brand dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       <span className="inline-flex items-center gap-1.5">
@@ -266,7 +253,7 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
                   </button>
                   {openActionMenuId === session.id ? (
                     <div
-                      className="absolute right-0 top-full z-30 mt-1 w-28 rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-[#4a515c] dark:bg-[#2a2f36]"
+                      className="absolute right-0 top-full z-30 mt-1 w-28 rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-600 dark:bg-gray-800"
                       role="menu"
                     >
                       <button
@@ -276,7 +263,7 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
                           e.stopPropagation();
                           handleStartEditTitle(session);
                         }}
-                        className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#343a43]"
+                        className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                       >
                         <svg
                           className="h-3.5 w-3.5"
@@ -330,18 +317,18 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
         )}
       </section>
 
-      <div className="mt-4 shrink-0 space-y-2 border-t border-gray-200 pt-4 dark:border-[#3a404a]">
-        <section className="rounded-lg border border-gray-200 bg-white p-3 dark:border-[#3a404a] dark:bg-[#2a2f36]">
+      <div className="mt-4 shrink-0 space-y-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+        <section className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{text.user}</p>
           <div className="mt-2 flex items-center gap-2">
             {authSession?.user?.image ? (
               <img
                 src={authSession.user.image}
                 alt={authSession.user.name ?? text.user}
-                className="h-9 w-9 rounded-full border border-gray-200 object-cover dark:border-[#4a515c]"
+                className="h-9 w-9 rounded-full border border-gray-200 object-cover dark:border-gray-600"
               />
             ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f69e25]/15 text-sm font-semibold text-[#c47a1a] dark:bg-[#f69e25]/20 dark:text-[#f69e25]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/15 text-sm font-semibold text-brand-ink dark:bg-brand/20 dark:text-brand">
                 {getInitial(authSession?.user?.name ?? authSession?.user?.email)}
               </div>
             )}
@@ -389,7 +376,7 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
             })();
           }}
           disabled={!authSession?.user && isSigningInWithGoogle}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:border-[#f69e25] hover:text-[#f69e25] dark:border-[#4a515c] dark:bg-[#2a2f36] dark:text-gray-300 dark:hover:border-[#f69e25] dark:hover:text-[#f69e25]"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:border-brand hover:text-brand dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-brand dark:hover:text-brand"
         >
           {authSession?.user
             ? text.signOut
@@ -413,7 +400,7 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
           aria-describedby="delete-dialog-desc"
         >
           <div
-            className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-[#3a404a] dark:bg-[#2a2f36]"
+            className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
             onKeyDown={(e) => {
               if (e.key === "Escape") setSessionToDelete(null);
             }}
@@ -428,7 +415,7 @@ export function LeftSidebar({ onClose, onSessionSelect, onRetryLoad }: LeftSideb
               <button
                 type="button"
                 onClick={() => setSessionToDelete(null)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200 dark:hover:bg-gray-600"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 {text.cancel}
               </button>

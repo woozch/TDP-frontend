@@ -111,7 +111,7 @@ function FinalReportMarkdown({ content }: { content: string }) {
           ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5">{children}</ol>,
           li: ({ children }) => <li>{children}</li>,
           blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-[#f69e25]/60 pl-3 italic text-gray-600 dark:text-gray-300">
+            <blockquote className="border-l-2 border-brand/60 pl-3 italic text-gray-600 dark:text-gray-300">
               {children}
             </blockquote>
           ),
@@ -120,18 +120,18 @@ function FinalReportMarkdown({ content }: { content: string }) {
               href={href}
               target="_blank"
               rel="noreferrer noopener"
-              className="text-[#c47a1a] underline decoration-[#f69e25]/50 underline-offset-2 hover:text-[#f69e25] dark:text-[#f69e25]"
+              className="text-brand-ink underline decoration-brand/50 underline-offset-2 hover:text-brand dark:text-brand"
             >
               {children}
             </a>
           ),
           code: ({ children }) => (
-            <code className="rounded bg-gray-100 px-1 py-0.5 text-[0.85em] dark:bg-[#343a43]">
+            <code className="rounded bg-gray-100 px-1 py-0.5 text-[0.85em] dark:bg-gray-700">
               {children}
             </code>
           ),
           pre: ({ children }) => (
-            <pre className="overflow-x-auto rounded-md bg-gray-100 p-2 text-xs dark:bg-[#171a1f]">
+            <pre className="overflow-x-auto rounded-md bg-gray-100 p-2 text-xs dark:bg-gray-800">
               {children}
             </pre>
           )
@@ -188,7 +188,7 @@ function FinalReportCarousel({
       </div>
       {total > 1 ? (
         <nav
-          className="flex shrink-0 items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 dark:border-[#4a515c] dark:bg-[#2a2f36]"
+          className="flex shrink-0 items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 dark:border-gray-600 dark:bg-gray-800"
           aria-label="Report navigation"
         >
           <button
@@ -197,7 +197,7 @@ function FinalReportCarousel({
             disabled={!canPrev}
             aria-label={text.reportNavPrev}
             title={text.reportNavPrev}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-[#4a515c] dark:text-gray-300 dark:hover:bg-[#343a43] dark:disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
           >
             <span aria-hidden>&lt;</span>
           </button>
@@ -218,7 +218,7 @@ function FinalReportCarousel({
             disabled={!canNext}
             aria-label={text.reportNavNext}
             title={text.reportNavNext}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-[#4a515c] dark:text-gray-300 dark:hover:bg-[#343a43] dark:disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
           >
             <span aria-hidden>&gt;</span>
           </button>
@@ -302,8 +302,8 @@ export function ResultTabs() {
   }, [activeTab, session.workflowStarted, setActiveTab]);
 
   return (
-    <section className="flex h-full flex-col overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-[#3a404a] dark:bg-[#2a2f36]">
-      <div className="sticky top-0 z-10 isolate mb-0 flex flex-col border-b border-gray-200 bg-white px-4 pb-2 pt-4 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:border-[#3a404a] dark:bg-[#2a2f36] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
+    <section className="flex h-full flex-col overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="sticky top-0 z-10 isolate mb-0 flex flex-col border-b border-gray-200 bg-white px-4 pb-2 pt-4 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => {
             const status = session.tabStatus[tab.key];
@@ -314,8 +314,8 @@ export function ResultTabs() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`rounded-lg border px-3 py-1.5 text-xs transition ${
                   activeTab === tab.key
-                    ? "border-[#f69e25] bg-[#f69e25]/15 text-[#c47a1a] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                    : "border-gray-300 bg-gray-50 text-gray-600 hover:border-gray-400 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
+                    ? "border-brand bg-brand/15 text-brand-ink dark:bg-brand/20 dark:text-brand"
+                    : "border-gray-300 bg-gray-50 text-gray-600 hover:border-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5">
@@ -338,15 +338,15 @@ export function ResultTabs() {
         {activeTab === "chat" ? (
           <div className="space-y-4">
             {session.workflowStarted ? (
-              <section className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-[#4a515c] dark:bg-[#171a1f]/60">
+              <section className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-600 dark:bg-gray-900/60">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {text.workflowStatus}
                 </p>
                 <div className="mt-2">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#343a43]">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                     <div
                       className={`h-full transition-all duration-500 ${
-                        hasError ? "bg-red-500" : "bg-[#f69e25]"
+                        hasError ? "bg-red-500" : "bg-brand"
                       }`}
                       style={{ width: `${progressPercent}%` }}
                     />
@@ -376,8 +376,8 @@ export function ResultTabs() {
                               : isComplete
                                 ? "bg-emerald-500"
                                 : isLoading
-                                  ? "bg-[#f69e25]"
-                                : "bg-gray-300 dark:bg-[#4a515c]"
+                                  ? "bg-brand"
+                                : "bg-gray-300 dark:bg-gray-600"
                           }`}
                         />
                         <div className="min-w-0 flex-1">
@@ -385,7 +385,7 @@ export function ResultTabs() {
                             {step.title}
                           </p>
                           {status === "loading" ? (
-                            <p className="text-[11px] text-[#c47a1a] dark:text-[#f69e25]">
+                            <p className="text-[11px] text-brand-ink dark:text-brand">
                               {step.inProgressDetail}
                             </p>
                           ) : status === "complete" ? (
@@ -414,8 +414,8 @@ export function ResultTabs() {
                             <button
                               type="button"
                               onClick={() => void retryStep(step.key)}
-                              className={`inline-flex h-5 w-5 items-center justify-center rounded hover:bg-[#f69e25]/10 ${
-                                status === "error" ? "text-[#f69e25]" : "text-emerald-500"
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded hover:bg-brand/10 ${
+                                status === "error" ? "text-brand" : "text-emerald-500"
                               }`}
                               title={
                                 status === "complete"
@@ -490,10 +490,10 @@ export function ResultTabs() {
                       key={`${message.id}-${index}`}
                       className={`rounded-lg p-3 text-sm ${
                         isUser
-                          ? "ml-8 border border-gray-200 bg-white dark:border-[#4a515c] dark:bg-[#171a1f]/60"
+                          ? "ml-8 border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-900/60"
                           : isClarifying
                             ? "mr-8 border border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15"
-                            : "mr-8 border border-[#f69e25]/40 bg-[#f69e25]/10 dark:bg-[#f69e25]/15"
+                            : "mr-8 border border-brand/40 bg-brand/10 dark:bg-brand/15"
                       }`}
                     >
                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -522,7 +522,7 @@ export function ResultTabs() {
               <p className="text-sm text-gray-500 dark:text-gray-400">{text.noPharmaYet}</p>
             ) : (
               session.pharma.map((item, idx) => (
-                <div key={`${item.company}-${idx}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-[#4a515c] dark:bg-[#343a43]">
+                <div key={`${item.company}-${idx}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {item.company} · {item.target}
                   </p>

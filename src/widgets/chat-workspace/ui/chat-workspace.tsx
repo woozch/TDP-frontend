@@ -18,7 +18,7 @@ export function ChatWorkspace() {
 
   if (!session) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600 shadow-sm dark:border-[#3a404a] dark:bg-[#2a2f36] dark:text-gray-400">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
         {text.noSessionFound}
       </div>
     );
@@ -33,7 +33,7 @@ export function ChatWorkspace() {
   return (
     <section>
       <form
-        className="flex items-end gap-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-[#3a404a] dark:bg-[#2a2f36]"
+        className="flex items-end gap-2 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
@@ -67,7 +67,7 @@ export function ChatWorkspace() {
         <button
           type="submit"
           disabled={session.isStreaming}
-          className="mb-2 mr-2 shrink-0 self-end rounded-lg bg-[#f69e25] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#e58e1a] disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-200 dark:disabled:bg-gray-600 dark:disabled:text-gray-500"
+          className="mb-2 mr-2 shrink-0 self-end rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-200 dark:disabled:bg-gray-600 dark:disabled:text-gray-500"
         >
           {session.isStreaming ? "…" : text.send}
         </button>

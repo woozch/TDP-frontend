@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { HeaderSettings } from "@/widgets/header-settings";
+import { AppLogo } from "@/shared/ui/app-logo";
 import signInBackground from "@/shared/assets/images/signin-background.png";
 
 export function SignInPage() {
@@ -16,13 +17,15 @@ export function SignInPage() {
   const authError = searchParams?.get("error");
   const isGoogleAccessDenied = authError === "AccessDenied";
   const isGoogleOAuthCallbackError = authError === "OAuthCallback";
-  const [googleSignInError, setGoogleSignInError] = useState<string | null>(null);
+  const [googleSignInError, setGoogleSignInError] = useState<string | null>(
+    null,
+  );
   const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);
 
   const handleDevSignIn = async () => {
     const result = await signIn("credentials", {
       callbackUrl: "/chat",
-      redirect: false
+      redirect: false,
     });
     if (result?.ok) {
       await router.refresh();
@@ -65,21 +68,27 @@ export function SignInPage() {
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: `url(${signInBackground.src})`,
-            filter: "brightness(0.82)"
+            filter: "brightness(0.82)",
           }}
         />
       </div>
 
-      <header className="flex h-12 shrink-0 items-center justify-end border-b border-gray-200 bg-white/95 px-4 dark:border-white/10 dark:bg-[#171a1f]/60 dark:backdrop-blur-md">
+      <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/95 md:px-6">
+        <div className="flex items-center gap-2">
+          <AppLogo size={26} />
+          <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">
+            {text.appName}
+          </h1>
+        </div>
         <HeaderSettings />
       </header>
       <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-white/10 dark:bg-[#2a2f36]/80 dark:shadow-xl dark:backdrop-blur-md">
+        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-white/35 bg-white/30 p-8 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-gray-800/50">
           <div className="text-center">
             <h1 className="flex items-center justify-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
               <span>{text.appName}</span>
             </h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               {text.signinDescription}
             </p>
           </div>
@@ -104,8 +113,11 @@ export function SignInPage() {
             <button
               type="button"
               onClick={() => void handleDevSignIn()}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-[#f69e25] bg-[#f69e25]/10 px-4 py-3 text-sm font-medium text-[#c47a1a] transition hover:bg-[#f69e25]/20 dark:text-[#f69e25] dark:hover:bg-[#f69e25]/20"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             >
+              <span role="img" aria-label="Gear" className="mr-0 text-m">
+                🛠️
+              </span>
               {text.devSignIn}
             </button>
 
@@ -113,7 +125,7 @@ export function SignInPage() {
               type="button"
               onClick={() => void handleGoogleSignIn()}
               disabled={isSigningInWithGoogle}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200 dark:hover:bg-gray-600"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
                 <path
@@ -133,7 +145,9 @@ export function SignInPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              {isSigningInWithGoogle ? `${text.signInWithGoogle}...` : text.signInWithGoogle}
+              {isSigningInWithGoogle
+                ? `${text.signInWithGoogle}...`
+                : text.signInWithGoogle}
             </button>
           </div>
         </div>

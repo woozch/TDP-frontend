@@ -65,11 +65,11 @@ export function HeaderSettings() {
           <button
             type="button"
             aria-label={text.closeSettings}
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-50"
             onClick={() => setOpen(false)}
           />
           <div
-            className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-[#3a404a] dark:bg-[#2a2f36]"
+            className="absolute right-0 top-full z-60 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
             role="menu"
           >
             <div className="px-3 py-2">
@@ -84,8 +84,8 @@ export function HeaderSettings() {
                   onClick={() => setDraftTheme("light")}
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
                     draftTheme === "light"
-                      ? "border-[#f69e25] bg-[#f69e25]/15 text-[#c47a1a] dark:border-[#f69e25] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
+                      ? "border-brand bg-brand/15 text-brand-ink dark:border-brand dark:bg-brand/20 dark:text-brand"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
                 >
                   Light
@@ -97,8 +97,8 @@ export function HeaderSettings() {
                   onClick={() => setDraftTheme("dark")}
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
                     draftTheme === "dark"
-                      ? "border-[#f69e25] bg-[#f69e25]/15 text-[#c47a1a] dark:border-[#f69e25] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
+                      ? "border-brand bg-brand/15 text-brand-ink dark:border-brand dark:bg-brand/20 dark:text-brand"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
                 >
                   Dark
@@ -115,7 +115,7 @@ export function HeaderSettings() {
                   aria-haspopup="listbox"
                   aria-expanded={languageListOpen}
                   onClick={() => setLanguageListOpen((prev) => !prev)}
-                  className="flex w-full items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300 dark:hover:border-gray-500"
+                  className="flex w-full items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
                 >
                   <span className="inline-flex items-center gap-2">
                     <span aria-hidden>{selectedLanguage.flag}</span>
@@ -127,7 +127,7 @@ export function HeaderSettings() {
                   <ul
                     role="listbox"
                     aria-label="Language options"
-                    className="absolute left-0 right-0 z-30 mt-1 max-h-44 overflow-y-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-[#4a515c] dark:bg-[#2a2f36]"
+                    className="absolute left-0 right-0 z-30 mt-1 max-h-44 overflow-y-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-600 dark:bg-gray-800"
                   >
                     {LANGUAGE_OPTIONS.map((item) => (
                       <li key={item.code}>
@@ -141,8 +141,8 @@ export function HeaderSettings() {
                           }}
                           className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
                             draftLanguage === item.code
-                              ? "bg-[#f69e25]/15 text-[#c47a1a] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#343a43]"
+                              ? "bg-brand/15 text-brand-ink dark:bg-brand/20 dark:text-brand"
+                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                           }`}
                         >
                           <span aria-hidden>{item.flag}</span>
@@ -154,7 +154,7 @@ export function HeaderSettings() {
                 ) : null}
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-3 py-2 dark:border-[#3a404a]">
+            <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-3 py-2 dark:border-gray-700">
               <button
                 type="button"
                 onClick={() => {
@@ -162,7 +162,7 @@ export function HeaderSettings() {
                   setDraftLanguage(language);
                   setLanguageListOpen(false);
                 }}
-                className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-[#4a515c] dark:text-gray-300 dark:hover:border-gray-500"
+                className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-500"
               >
                 {text.reset}
               </button>
@@ -175,7 +175,7 @@ export function HeaderSettings() {
                   setOpen(false);
                 }}
                 disabled={!hasChanges}
-                className="rounded-md bg-[#f69e25] px-3 py-1.5 text-sm text-white transition hover:bg-[#e38e19] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md bg-brand px-3 py-1.5 text-sm text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {text.apply}
               </button>

@@ -6,23 +6,30 @@ import dynamic from "next/dynamic";
 import type { GraphEdge, GraphNode } from "@contracts/types";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
-  ssr: false
+  ssr: false,
 }) as unknown as typeof import("react-force-graph-2d").default;
 
 const DEFAULT_NODE_COLOR_BY_KIND: Record<string, string> = {
   gene: "#f69e25",
   target: "#2563eb",
   pathway: "#16a34a",
-  drug: "#a855f7"
+  drug: "#a855f7",
 };
 
 const NODE_LABEL_BY_KIND: Record<string, string> = {
   gene: "query gene",
   target: "target gene",
   pathway: "pathway",
-  drug: "drug"
+  drug: "drug",
 };
-const FALLBACK_NODE_COLORS = ["#14b8a6", "#e11d48", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16"];
+const FALLBACK_NODE_COLORS = [
+  "#14b8a6",
+  "#e11d48",
+  "#f59e0b",
+  "#8b5cf6",
+  "#06b6d4",
+  "#84cc16",
+];
 
 function escapeRegexChar(char: string) {
   return char.replace(/[\\^$+?.()|[\]{}]/g, "\\$&");
@@ -48,13 +55,15 @@ function matchesNodeNameFilter(value: string, rawFilter: string) {
   return patterns.some((pattern) => matchesWildcardPattern(value, pattern));
 }
 
-function buildDefaultNodeNameFilterByKind(nodeKinds: string[]): Record<string, string> {
+function buildDefaultNodeNameFilterByKind(
+  nodeKinds: string[],
+): Record<string, string> {
   return Object.fromEntries(nodeKinds.map((kind) => [kind, "*"]));
 }
 
 function normalizeNodeNameFilterByKind(
   filters: Record<string, string>,
-  nodeKinds: string[]
+  nodeKinds: string[],
 ): Record<string, string> {
   const next = { ...filters };
   for (const kind of nodeKinds) {
@@ -71,15 +80,22 @@ function getNodeColor(kind: string, colorsByKind?: Record<string, string>) {
   return FALLBACK_NODE_COLORS[hash % FALLBACK_NODE_COLORS.length];
 }
 
-function buildDefaultNodeColorByKind(nodeKinds: string[]): Record<string, string> {
-  return Object.fromEntries(nodeKinds.map((kind) => [kind, getNodeColor(kind)]));
+function buildDefaultNodeColorByKind(
+  nodeKinds: string[],
+): Record<string, string> {
+  return Object.fromEntries(
+    nodeKinds.map((kind) => [kind, getNodeColor(kind)]),
+  );
 }
 
 function getNodeLabel(kind: string) {
   return NODE_LABEL_BY_KIND[kind] ?? kind;
 }
 
-function clampCountRange(range: CountRange | undefined, limit: number): CountRange {
+function clampCountRange(
+  range: CountRange | undefined,
+  limit: number,
+): CountRange {
   const safeLimit = Math.max(0, limit);
   const min = Math.max(0, Math.min(range?.min ?? 0, safeLimit));
   const max = Math.max(min, Math.min(range?.max ?? safeLimit, safeLimit));
@@ -88,7 +104,13 @@ function clampCountRange(range: CountRange | undefined, limit: number): CountRan
 
 function withAlpha(hexColor: string, alpha: number) {
   const normalized = hexColor.replace("#", "");
-  const full = normalized.length === 3 ? normalized.split("").map((v) => v + v).join("") : normalized;
+  const full =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((v) => v + v)
+          .join("")
+      : normalized;
   if (full.length !== 6) return `rgba(107, 114, 128, ${alpha})`;
   const r = parseInt(full.slice(0, 2), 16);
   const g = parseInt(full.slice(2, 4), 16);
@@ -165,50 +187,68 @@ export function GeneGraphView({ nodes, edges }: Props) {
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const hasHydratedSettingsRef = useRef(false);
   const persistedSettingsRef = useRef<PersistedGraphSettings | null>(null);
-  const [isSettingsReadyToPersist, setIsSettingsReadyToPersist] = useState(false);
+  const [isSettingsReadyToPersist, setIsSettingsReadyToPersist] =
+    useState(false);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
-  const [activeHoverCard, setActiveHoverCard] = useState<HoverInfoCard | null>(null);
+  const [activeHoverCard, setActiveHoverCard] = useState<HoverInfoCard | null>(
+    null,
+  );
   const [pinnedHoverCards, setPinnedHoverCards] = useState<HoverInfoCard[]>([]);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("default");
-  const [nodeKindEnabled, setNodeKindEnabled] = useState<Record<string, boolean>>({});
-  const [edgeTypeEnabled, setEdgeTypeEnabled] = useState<Record<string, boolean>>({});
-  const [sourceCountRangeByType, setSourceCountRangeByType] = useState<Record<string, CountRange>>(
-    {}
-  );
-  const [destinationCountRangeByType, setDestinationCountRangeByType] = useState<
+  const [nodeKindEnabled, setNodeKindEnabled] = useState<
+    Record<string, boolean>
+  >({});
+  const [edgeTypeEnabled, setEdgeTypeEnabled] = useState<
+    Record<string, boolean>
+  >({});
+  const [sourceCountRangeByType, setSourceCountRangeByType] = useState<
     Record<string, CountRange>
   >({});
+  const [destinationCountRangeByType, setDestinationCountRangeByType] =
+    useState<Record<string, CountRange>>({});
   const [scoreRangeByType, setScoreRangeByType] = useState<
     Record<string, { min: number; max: number }>
   >({});
-  const [nodeNameFilterByKind, setNodeNameFilterByKind] = useState<Record<string, string>>({});
-  const [nodeColorByKind, setNodeColorByKind] = useState<Record<string, string>>({});
+  const [nodeNameFilterByKind, setNodeNameFilterByKind] = useState<
+    Record<string, string>
+  >({});
+  const [nodeColorByKind, setNodeColorByKind] = useState<
+    Record<string, string>
+  >({});
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [draftSourceCountRangeByType, setDraftSourceCountRangeByType] = useState<
-    Record<string, CountRange>
-  >({});
-  const [draftDestinationCountRangeByType, setDraftDestinationCountRangeByType] = useState<
-    Record<string, CountRange>
-  >({});
+  const [draftSourceCountRangeByType, setDraftSourceCountRangeByType] =
+    useState<Record<string, CountRange>>({});
+  const [
+    draftDestinationCountRangeByType,
+    setDraftDestinationCountRangeByType,
+  ] = useState<Record<string, CountRange>>({});
   const [draftScoreRangeByType, setDraftScoreRangeByType] = useState<
     Record<string, { min: number; max: number }>
   >({});
   const [draftNodeNameFilterByKind, setDraftNodeNameFilterByKind] = useState<
     Record<string, string>
   >({});
-  const [draftNodeColorByKind, setDraftNodeColorByKind] = useState<Record<string, string>>({});
+  const [draftNodeColorByKind, setDraftNodeColorByKind] = useState<
+    Record<string, string>
+  >({});
 
   const nodeKinds = useMemo(
     () => Array.from(new Set(nodes.map((node) => String(node.kind)))).sort(),
-    [nodes]
+    [nodes],
   );
 
   useEffect(() => {
     const el = graphContainerRef.current;
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
-      const { width, height } = entries[0]?.contentRect ?? { width: 600, height: 400 };
-      setDimensions({ width: Math.max(200, width), height: Math.max(200, height) });
+      const { width, height } = entries[0]?.contentRect ?? {
+        width: 600,
+        height: 400,
+      };
+      setDimensions({
+        width: Math.max(200, width),
+        height: Math.max(200, height),
+      });
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -238,42 +278,58 @@ export function GeneGraphView({ nodes, edges }: Props) {
         setEdgeTypeEnabled(parsed.edgeTypeEnabled as Record<string, boolean>);
       }
       if (isRecord(parsed.sourceCountRangeByType)) {
-        setSourceCountRangeByType(parsed.sourceCountRangeByType as Record<string, CountRange>);
+        setSourceCountRangeByType(
+          parsed.sourceCountRangeByType as Record<string, CountRange>,
+        );
       }
       if (isRecord(parsed.destinationCountRangeByType)) {
-        setDestinationCountRangeByType(parsed.destinationCountRangeByType as Record<string, CountRange>);
+        setDestinationCountRangeByType(
+          parsed.destinationCountRangeByType as Record<string, CountRange>,
+        );
       }
       if (isRecord(parsed.scoreRangeByType)) {
         setScoreRangeByType(
-          parsed.scoreRangeByType as Record<string, { min: number; max: number }>
+          parsed.scoreRangeByType as Record<
+            string,
+            { min: number; max: number }
+          >,
         );
       }
       if (isRecord(parsed.nodeNameFilterByKind)) {
-        setNodeNameFilterByKind(parsed.nodeNameFilterByKind as Record<string, string>);
+        setNodeNameFilterByKind(
+          parsed.nodeNameFilterByKind as Record<string, string>,
+        );
       }
       if (isRecord(parsed.nodeColorByKind)) {
         setNodeColorByKind(parsed.nodeColorByKind as Record<string, string>);
       }
       if (isRecord(parsed.draftSourceCountRangeByType)) {
         setDraftSourceCountRangeByType(
-          parsed.draftSourceCountRangeByType as Record<string, CountRange>
+          parsed.draftSourceCountRangeByType as Record<string, CountRange>,
         );
       }
       if (isRecord(parsed.draftDestinationCountRangeByType)) {
         setDraftDestinationCountRangeByType(
-          parsed.draftDestinationCountRangeByType as Record<string, CountRange>
+          parsed.draftDestinationCountRangeByType as Record<string, CountRange>,
         );
       }
       if (isRecord(parsed.draftScoreRangeByType)) {
         setDraftScoreRangeByType(
-          parsed.draftScoreRangeByType as Record<string, { min: number; max: number }>
+          parsed.draftScoreRangeByType as Record<
+            string,
+            { min: number; max: number }
+          >,
         );
       }
       if (isRecord(parsed.draftNodeNameFilterByKind)) {
-        setDraftNodeNameFilterByKind(parsed.draftNodeNameFilterByKind as Record<string, string>);
+        setDraftNodeNameFilterByKind(
+          parsed.draftNodeNameFilterByKind as Record<string, string>,
+        );
       }
       if (isRecord(parsed.draftNodeColorByKind)) {
-        setDraftNodeColorByKind(parsed.draftNodeColorByKind as Record<string, string>);
+        setDraftNodeColorByKind(
+          parsed.draftNodeColorByKind as Record<string, string>,
+        );
       }
     } catch {
       // Ignore invalid persisted settings and continue with defaults.
@@ -301,7 +357,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
 
   const edgeTypes = useMemo(
     () => Array.from(new Set(edges.map((edge) => edge.relation))).sort(),
-    [edges]
+    [edges],
   );
   const edgeCountLimitsByType = useMemo(() => {
     const sourceCountsByNode = new Map<string, Record<string, number>>();
@@ -321,7 +377,10 @@ export function GeneGraphView({ nodes, edges }: Props) {
       destinationCountsByNode.set(targetId, destinationCounts);
     }
 
-    const limits: Record<string, { sourceMax: number; destinationMax: number }> = {};
+    const limits: Record<
+      string,
+      { sourceMax: number; destinationMax: number }
+    > = {};
     for (const relation of edgeTypes) {
       let sourceMax = 0;
       let destinationMax = 0;
@@ -348,20 +407,28 @@ export function GeneGraphView({ nodes, edges }: Props) {
 
     setSourceCountRangeByType((prev) => {
       const next: Record<string, CountRange> = {};
-      const persisted = persistedSettingsRef.current?.sourceCountRangeByType ?? {};
+      const persisted =
+        persistedSettingsRef.current?.sourceCountRangeByType ?? {};
       for (const relation of edgeTypes) {
         const limit = edgeCountLimitsByType[relation]?.sourceMax ?? 0;
-        next[relation] = clampCountRange(prev[relation] ?? persisted[relation], limit);
+        next[relation] = clampCountRange(
+          prev[relation] ?? persisted[relation],
+          limit,
+        );
       }
       return next;
     });
 
     setDestinationCountRangeByType((prev) => {
       const next: Record<string, CountRange> = {};
-      const persisted = persistedSettingsRef.current?.destinationCountRangeByType ?? {};
+      const persisted =
+        persistedSettingsRef.current?.destinationCountRangeByType ?? {};
       for (const relation of edgeTypes) {
         const limit = edgeCountLimitsByType[relation]?.destinationMax ?? 0;
-        next[relation] = clampCountRange(prev[relation] ?? persisted[relation], limit);
+        next[relation] = clampCountRange(
+          prev[relation] ?? persisted[relation],
+          limit,
+        );
       }
       return next;
     });
@@ -370,7 +437,8 @@ export function GeneGraphView({ nodes, edges }: Props) {
       const next: Record<string, { min: number; max: number }> = {};
       const persisted = persistedSettingsRef.current?.scoreRangeByType ?? {};
       for (const relation of edgeTypes) {
-        next[relation] = prev[relation] ?? persisted[relation] ?? { min: 0, max: 1 };
+        next[relation] = prev[relation] ??
+          persisted[relation] ?? { min: 0, max: 1 };
       }
       return next;
     });
@@ -388,7 +456,8 @@ export function GeneGraphView({ nodes, edges }: Props) {
 
     setNodeNameFilterByKind((prev) => {
       const defaults = buildDefaultNodeNameFilterByKind(nodeKinds);
-      const persisted = persistedSettingsRef.current?.nodeNameFilterByKind ?? {};
+      const persisted =
+        persistedSettingsRef.current?.nodeNameFilterByKind ?? {};
       const next: Record<string, string> = {};
       for (const kind of nodeKinds) {
         next[kind] = prev[kind] ?? persisted[kind] ?? defaults[kind];
@@ -425,9 +494,12 @@ export function GeneGraphView({ nodes, edges }: Props) {
       draftDestinationCountRangeByType,
       draftScoreRangeByType,
       draftNodeNameFilterByKind,
-      draftNodeColorByKind
+      draftNodeColorByKind,
     };
-    window.sessionStorage.setItem(GRAPH_SETTINGS_STORAGE_KEY, JSON.stringify(payload));
+    window.sessionStorage.setItem(
+      GRAPH_SETTINGS_STORAGE_KEY,
+      JSON.stringify(payload),
+    );
   }, [
     layoutMode,
     nodeKindEnabled,
@@ -442,7 +514,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
     draftScoreRangeByType,
     draftNodeNameFilterByKind,
     draftNodeColorByKind,
-    isSettingsReadyToPersist
+    isSettingsReadyToPersist,
   ]);
 
   const graphData = useMemo(() => {
@@ -455,7 +527,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
       })
       .map((n) => ({
         ...n,
-        color: getNodeColor(String(n.kind), nodeColorByKind)
+        color: getNodeColor(String(n.kind), nodeColorByKind),
       }));
 
     const visibleNodeIds = new Set(kindFilteredNodes.map((n) => n.id));
@@ -463,20 +535,29 @@ export function GeneGraphView({ nodes, edges }: Props) {
       .filter((e) => edgeTypeEnabled[e.relation] ?? true)
       .filter((e) => {
         const range = scoreRangeByType[e.relation] ?? { min: 0, max: 1 };
-        const score = (e as GraphEdge & { score?: number }).score ?? e.confidence ?? 0;
+        const score =
+          (e as GraphEdge & { score?: number }).score ?? e.confidence ?? 0;
         return score >= range.min && score <= range.max;
       })
-      .filter((e) => visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target))
+      .filter(
+        (e) => visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target),
+      )
       .map((e) => ({
         source: e.source,
         target: e.target,
         relation: e.relation,
-        confidence: e.confidence
+        confidence: e.confidence,
       }));
 
     // Count source/destination edge types per node for range-based filtering.
-    const sourceEdgeTypeCountsByNode = new Map<string, Record<string, number>>();
-    const destinationEdgeTypeCountsByNode = new Map<string, Record<string, number>>();
+    const sourceEdgeTypeCountsByNode = new Map<
+      string,
+      Record<string, number>
+    >();
+    const destinationEdgeTypeCountsByNode = new Map<
+      string,
+      Record<string, number>
+    >();
     for (const link of kindAndTypeFilteredLinks) {
       const sourceId = String(link.source);
       const targetId = String(link.target);
@@ -493,16 +574,22 @@ export function GeneGraphView({ nodes, edges }: Props) {
 
     // Keep only nodes that satisfy per-edge-type source/destination ranges.
     const eligibleNodes = kindFilteredNodes.filter((node) => {
-      const sourceCounts = sourceEdgeTypeCountsByNode.get(String(node.id)) ?? {};
-      const destinationCounts = destinationEdgeTypeCountsByNode.get(String(node.id)) ?? {};
+      const sourceCounts =
+        sourceEdgeTypeCountsByNode.get(String(node.id)) ?? {};
+      const destinationCounts =
+        destinationEdgeTypeCountsByNode.get(String(node.id)) ?? {};
       for (const relation of edgeTypes) {
         if (!(edgeTypeEnabled[relation] ?? true)) continue;
         const sourceLimit = edgeCountLimitsByType[relation]?.sourceMax ?? 0;
-        const destinationLimit = edgeCountLimitsByType[relation]?.destinationMax ?? 0;
-        const sourceRange = clampCountRange(sourceCountRangeByType[relation], sourceLimit);
+        const destinationLimit =
+          edgeCountLimitsByType[relation]?.destinationMax ?? 0;
+        const sourceRange = clampCountRange(
+          sourceCountRangeByType[relation],
+          sourceLimit,
+        );
         const destinationRange = clampCountRange(
           destinationCountRangeByType[relation],
-          destinationLimit
+          destinationLimit,
         );
         const sourceCount = sourceCounts[relation] ?? 0;
         const destinationCount = destinationCounts[relation] ?? 0;
@@ -526,12 +613,13 @@ export function GeneGraphView({ nodes, edges }: Props) {
     }
 
     const visibleNodes = eligibleNodes.filter((node) =>
-      connectedNodeIds.has(String(node.id))
+      connectedNodeIds.has(String(node.id)),
     );
     const finalNodeIds = new Set(visibleNodes.map((node) => String(node.id)));
     const visibleLinks = kindAndTypeFilteredLinks.filter(
       (link) =>
-        finalNodeIds.has(String(link.source)) && finalNodeIds.has(String(link.target))
+        finalNodeIds.has(String(link.source)) &&
+        finalNodeIds.has(String(link.target)),
     );
 
     return { nodes: visibleNodes, links: visibleLinks };
@@ -546,25 +634,34 @@ export function GeneGraphView({ nodes, edges }: Props) {
     scoreRangeByType,
     nodeNameFilterByKind,
     edgeCountLimitsByType,
-    nodeColorByKind
+    nodeColorByKind,
   ]);
 
   const dagMode = layoutMode === "default" ? undefined : layoutMode;
   const openAdvancedSettings = () => {
     setDraftSourceCountRangeByType(
       Object.fromEntries(
-        Object.entries(sourceCountRangeByType).map(([key, value]) => [key, { ...value }])
-      )
+        Object.entries(sourceCountRangeByType).map(([key, value]) => [
+          key,
+          { ...value },
+        ]),
+      ),
     );
     setDraftDestinationCountRangeByType(
       Object.fromEntries(
-        Object.entries(destinationCountRangeByType).map(([key, value]) => [key, { ...value }])
-      )
+        Object.entries(destinationCountRangeByType).map(([key, value]) => [
+          key,
+          { ...value },
+        ]),
+      ),
     );
     setDraftScoreRangeByType(
       Object.fromEntries(
-        Object.entries(scoreRangeByType).map(([key, value]) => [key, { ...value }])
-      )
+        Object.entries(scoreRangeByType).map(([key, value]) => [
+          key,
+          { ...value },
+        ]),
+      ),
     );
     setDraftNodeNameFilterByKind({ ...nodeNameFilterByKind });
     setDraftNodeColorByKind({ ...nodeColorByKind });
@@ -577,10 +674,10 @@ export function GeneGraphView({ nodes, edges }: Props) {
           relation,
           clampCountRange(
             draftSourceCountRangeByType[relation],
-            edgeCountLimitsByType[relation]?.sourceMax ?? 0
-          )
-        ])
-      )
+            edgeCountLimitsByType[relation]?.sourceMax ?? 0,
+          ),
+        ]),
+      ),
     );
     setDestinationCountRangeByType(
       Object.fromEntries(
@@ -588,21 +685,29 @@ export function GeneGraphView({ nodes, edges }: Props) {
           relation,
           clampCountRange(
             draftDestinationCountRangeByType[relation],
-            edgeCountLimitsByType[relation]?.destinationMax ?? 0
-          )
-        ])
-      )
+            edgeCountLimitsByType[relation]?.destinationMax ?? 0,
+          ),
+        ]),
+      ),
     );
     setScoreRangeByType(
       Object.fromEntries(
-        Object.entries(draftScoreRangeByType).map(([key, value]) => [key, { ...value }])
-      )
+        Object.entries(draftScoreRangeByType).map(([key, value]) => [
+          key,
+          { ...value },
+        ]),
+      ),
     );
-    setNodeNameFilterByKind(normalizeNodeNameFilterByKind(draftNodeNameFilterByKind, nodeKinds));
+    setNodeNameFilterByKind(
+      normalizeNodeNameFilterByKind(draftNodeNameFilterByKind, nodeKinds),
+    );
     setNodeColorByKind(
       Object.fromEntries(
-        nodeKinds.map((kind) => [kind, draftNodeColorByKind[kind] ?? getNodeColor(kind)])
-      )
+        nodeKinds.map((kind) => [
+          kind,
+          draftNodeColorByKind[kind] ?? getNodeColor(kind),
+        ]),
+      ),
     );
     setShowAdvancedSettings(false);
   };
@@ -620,14 +725,18 @@ export function GeneGraphView({ nodes, edges }: Props) {
       return activeHoverCard ? [activeHoverCard] : [];
     }
     if (!activeHoverCard) return pinnedHoverCards;
-    const hasSame = pinnedHoverCards.some((card) => card.id === activeHoverCard.id);
+    const hasSame = pinnedHoverCards.some(
+      (card) => card.id === activeHoverCard.id,
+    );
     if (hasSame) return pinnedHoverCards;
     return [...pinnedHoverCards, activeHoverCard].slice(-3);
   }, [activeHoverCard, pinnedHoverCards]);
 
   if (nodes.length === 0) {
     return (
-      <p className="text-sm text-gray-500 dark:text-gray-400">No graph data loaded yet.</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        No graph data loaded yet.
+      </p>
     );
   }
 
@@ -635,7 +744,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
     <div className="graph-visualization flex min-h-[360px] flex-col items-stretch gap-3 lg:h-full lg:min-h-0 lg:flex-row">
       <div
         ref={graphContainerRef}
-        className="relative min-h-[320px] min-w-0 flex-1 overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-[#3a404a] dark:bg-[#121417] lg:min-h-0"
+        className="relative min-h-[320px] min-w-0 flex-1 overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 lg:min-h-0"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             setPinnedHoverCards([]);
@@ -655,19 +764,27 @@ export function GeneGraphView({ nodes, edges }: Props) {
           nodeCanvasObject={(node, ctx, globalScale) => {
             const n = node as GraphNodeWithViz & { x: number; y: number };
             const label = n.label ?? n.id;
-            const fontSize = Math.min(Math.max((n.score ?? 0.5) * 24, 10), 28) / globalScale;
+            const fontSize =
+              Math.min(Math.max((n.score ?? 0.5) * 24, 10), 28) / globalScale;
             ctx.font = `${fontSize}px Sans-Serif`;
             const textWidth = ctx.measureText(label).width;
-            const bckgDimensions = [textWidth, fontSize].map((d) => d + fontSize * 0.2);
+            const bckgDimensions = [textWidth, fontSize].map(
+              (d) => d + fontSize * 0.2,
+            );
 
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillStyle = n.color ?? "#6b7280";
             ctx.fillText(label, n.x, n.y);
-            (n as { __bckgDimensions?: number[] }).__bckgDimensions = bckgDimensions;
+            (n as { __bckgDimensions?: number[] }).__bckgDimensions =
+              bckgDimensions;
           }}
           nodePointerAreaPaint={(node, color, ctx) => {
-            const n = node as { x: number; y: number; __bckgDimensions?: number[] };
+            const n = node as {
+              x: number;
+              y: number;
+              __bckgDimensions?: number[];
+            };
             const bckgDimensions = n.__bckgDimensions;
             if (!bckgDimensions) return;
             ctx.fillStyle = color;
@@ -675,14 +792,20 @@ export function GeneGraphView({ nodes, edges }: Props) {
               n.x - bckgDimensions[0] / 2,
               n.y - bckgDimensions[1] / 2,
               bckgDimensions[0],
-              bckgDimensions[1]
+              bckgDimensions[1],
             );
           }}
           linkCanvasObjectMode={() => "replace"}
           linkCanvasObject={(link, ctx, globalScale) => {
             const current = link as GraphLinkWithViz;
-            const source = current.source as GraphNodeWithViz & { x: number; y: number };
-            const target = current.target as GraphNodeWithViz & { x: number; y: number };
+            const source = current.source as GraphNodeWithViz & {
+              x: number;
+              y: number;
+            };
+            const target = current.target as GraphNodeWithViz & {
+              x: number;
+              y: number;
+            };
             if (source?.x == null || target?.x == null) return;
             if (
               !Number.isFinite(source.x) ||
@@ -699,22 +822,29 @@ export function GeneGraphView({ nodes, edges }: Props) {
 
             const sourceKind = source.kind;
             const targetKind = target.kind;
-            const sourceColor = getNodeColor(String(sourceKind), nodeColorByKind);
-            const targetColor = getNodeColor(String(targetKind), nodeColorByKind);
+            const sourceColor = getNodeColor(
+              String(sourceKind),
+              nodeColorByKind,
+            );
+            const targetColor = getNodeColor(
+              String(targetKind),
+              nodeColorByKind,
+            );
 
             const kindWeight: Record<GraphNode["kind"], number> = {
               gene: 1.2,
               target: 1.05,
               pathway: 0.9,
-              drug: 1.1
+              drug: 1.1,
             };
-            const widthByKind = (kindWeight[sourceKind] + kindWeight[targetKind]) / 2;
+            const widthByKind =
+              (kindWeight[sourceKind] + kindWeight[targetKind]) / 2;
 
             const gradient = ctx.createLinearGradient(
               source.x,
               source.y,
               target.x,
-              target.y
+              target.y,
             );
             gradient.addColorStop(0.0, sourceColor);
             gradient.addColorStop(1.0, targetColor);
@@ -722,15 +852,20 @@ export function GeneGraphView({ nodes, edges }: Props) {
             ctx.beginPath();
             ctx.moveTo(source.x, source.y);
             ctx.lineTo(target.x, target.y);
-            ctx.lineWidth = Math.max(0.7, (1.4 + score * 4.2) * widthByKind) / globalScale;
+            ctx.lineWidth =
+              Math.max(0.7, (1.4 + score * 4.2) * widthByKind) / globalScale;
             ctx.globalAlpha = alpha;
             ctx.strokeStyle = gradient;
             ctx.stroke();
             ctx.globalAlpha = 1;
           }}
           onNodeDragEnd={(node) => {
-            (node as { fx?: number; fy?: number }).fx = (node as { x: number }).x;
-            (node as { fx?: number; fy?: number }).fy = (node as { y: number }).y;
+            (node as { fx?: number; fy?: number }).fx = (
+              node as { x: number }
+            ).x;
+            (node as { fx?: number; fy?: number }).fy = (
+              node as { y: number }
+            ).y;
           }}
           onNodeHover={(node) => {
             if (node) {
@@ -742,10 +877,12 @@ export function GeneGraphView({ nodes, edges }: Props) {
                 nodeColor: getNodeColor(nodeKind, nodeColorByKind),
                 nodeName: String(n.label ?? n.id),
                 nodeKindLabel: getNodeLabel(nodeKind),
-                scoreText: `${(n.score * 100).toFixed(0)}%`
+                scoreText: `${(n.score * 100).toFixed(0)}%`,
               });
             } else {
-              setActiveHoverCard((prev) => (prev?.id.startsWith("node:") ? null : prev));
+              setActiveHoverCard((prev) =>
+                prev?.id.startsWith("node:") ? null : prev,
+              );
             }
           }}
           onNodeClick={(node) => {
@@ -757,19 +894,28 @@ export function GeneGraphView({ nodes, edges }: Props) {
               nodeColor: getNodeColor(nodeKind, nodeColorByKind),
               nodeName: String(n.label ?? n.id),
               nodeKindLabel: getNodeLabel(nodeKind),
-              scoreText: `${(n.score * 100).toFixed(0)}%`
+              scoreText: `${(n.score * 100).toFixed(0)}%`,
             });
           }}
           onLinkHover={(link) => {
             if (!link) {
-              setActiveHoverCard((prev) => (prev?.id.startsWith("edge:") ? null : prev));
+              setActiveHoverCard((prev) =>
+                prev?.id.startsWith("edge:") ? null : prev,
+              );
               return;
             }
             const current = link as GraphLinkWithViz;
             const source = current.source as GraphNodeWithViz;
             const target = current.target as GraphNodeWithViz;
-            if (!source || !target || typeof source === "string" || typeof target === "string") {
-              setActiveHoverCard((prev) => (prev?.id.startsWith("edge:") ? null : prev));
+            if (
+              !source ||
+              !target ||
+              typeof source === "string" ||
+              typeof target === "string"
+            ) {
+              setActiveHoverCard((prev) =>
+                prev?.id.startsWith("edge:") ? null : prev,
+              );
               return;
             }
             const score = (current.score ?? current.confidence ?? 0.5) * 100;
@@ -783,16 +929,24 @@ export function GeneGraphView({ nodes, edges }: Props) {
               sourceColor: getNodeColor(String(source.kind), nodeColorByKind),
               destinationName: String(target.label ?? target.id),
               destinationKindLabel: getNodeLabel(String(target.kind)),
-              destinationColor: getNodeColor(String(target.kind), nodeColorByKind),
+              destinationColor: getNodeColor(
+                String(target.kind),
+                nodeColorByKind,
+              ),
               scoreText: `${score.toFixed(0)}%`,
-              confidenceText: `${confidence.toFixed(0)}%`
+              confidenceText: `${confidence.toFixed(0)}%`,
             });
           }}
           onLinkClick={(link) => {
             const current = link as GraphLinkWithViz;
             const source = current.source as GraphNodeWithViz;
             const target = current.target as GraphNodeWithViz;
-            if (!source || !target || typeof source === "string" || typeof target === "string") {
+            if (
+              !source ||
+              !target ||
+              typeof source === "string" ||
+              typeof target === "string"
+            ) {
               setPinnedHoverCards([]);
               setActiveHoverCard(null);
               return;
@@ -808,9 +962,12 @@ export function GeneGraphView({ nodes, edges }: Props) {
               sourceColor: getNodeColor(String(source.kind), nodeColorByKind),
               destinationName: String(target.label ?? target.id),
               destinationKindLabel: getNodeLabel(String(target.kind)),
-              destinationColor: getNodeColor(String(target.kind), nodeColorByKind),
+              destinationColor: getNodeColor(
+                String(target.kind),
+                nodeColorByKind,
+              ),
               scoreText: `${score.toFixed(0)}%`,
-              confidenceText: `${confidence.toFixed(0)}%`
+              confidenceText: `${confidence.toFixed(0)}%`,
             });
           }}
           onBackgroundClick={() => {
@@ -831,7 +988,12 @@ export function GeneGraphView({ nodes, edges }: Props) {
                 }
                 style={
                   card.type === "node"
-                    ? { backgroundColor: withAlpha(card.nodeColor ?? "#6b7280", 0.6) }
+                    ? {
+                        backgroundColor: withAlpha(
+                          card.nodeColor ?? "#6b7280",
+                          0.6,
+                        ),
+                      }
                     : { backgroundColor: "rgba(31, 35, 41, 0.6)" }
                 }
               >
@@ -855,8 +1017,12 @@ export function GeneGraphView({ nodes, edges }: Props) {
                   </div>
                 ) : (
                   <div className="min-w-max space-y-1">
-                    <p className="whitespace-nowrap font-semibold">Node: {card.nodeName}</p>
-                    <p className="whitespace-nowrap">Kind: {card.nodeKindLabel}</p>
+                    <p className="whitespace-nowrap font-semibold">
+                      Node: {card.nodeName}
+                    </p>
+                    <p className="whitespace-nowrap">
+                      Kind: {card.nodeKindLabel}
+                    </p>
                     <p>Score: {card.scoreText}</p>
                   </div>
                 )}
@@ -866,7 +1032,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
         ) : null}
       </div>
 
-      <aside className="relative z-10 flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-3 dark:border-[#3a404a] dark:bg-[#1d2127] lg:h-full lg:w-64">
+      <aside className="relative z-10 flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:h-full lg:w-64">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Graph settings
@@ -875,10 +1041,10 @@ export function GeneGraphView({ nodes, edges }: Props) {
             <button
               type="button"
               onClick={openAdvancedSettings}
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-md border text-gray-600 hover:border-[#f69e25] hover:text-[#f69e25] dark:text-gray-200 ${
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-md border text-gray-600 hover:border-brand hover:text-brand dark:text-gray-200 ${
                 showAdvancedSettings
-                  ? "border-[#f69e25] bg-[#f69e25]/10 dark:bg-[#f69e25]/20"
-                  : "border-gray-300 dark:border-[#4a515c] dark:bg-[#343a43]"
+                  ? "border-brand bg-brand/10 dark:bg-brand/20"
+                  : "border-gray-300 dark:border-gray-600 dark:bg-gray-700"
               }`}
               title="Advanced settings"
               aria-label="Advanced settings"
@@ -907,36 +1073,50 @@ export function GeneGraphView({ nodes, edges }: Props) {
               onClick={() => {
                 setLayoutMode("default");
                 setNodeKindEnabled((prev) =>
-                  Object.fromEntries(Object.keys(prev).map((key) => [key, true]))
+                  Object.fromEntries(
+                    Object.keys(prev).map((key) => [key, true]),
+                  ),
                 );
                 setEdgeTypeEnabled((prev) =>
-                  Object.fromEntries(Object.keys(prev).map((key) => [key, true]))
+                  Object.fromEntries(
+                    Object.keys(prev).map((key) => [key, true]),
+                  ),
                 );
                 setSourceCountRangeByType((prev) =>
                   Object.fromEntries(
                     Object.keys(prev).map((key) => [
                       key,
-                      { min: 0, max: edgeCountLimitsByType[key]?.sourceMax ?? 0 }
-                    ])
-                  )
+                      {
+                        min: 0,
+                        max: edgeCountLimitsByType[key]?.sourceMax ?? 0,
+                      },
+                    ]),
+                  ),
                 );
                 setDestinationCountRangeByType((prev) =>
                   Object.fromEntries(
                     Object.keys(prev).map((key) => [
                       key,
-                      { min: 0, max: edgeCountLimitsByType[key]?.destinationMax ?? 0 }
-                    ])
-                  )
+                      {
+                        min: 0,
+                        max: edgeCountLimitsByType[key]?.destinationMax ?? 0,
+                      },
+                    ]),
+                  ),
                 );
                 setScoreRangeByType((prev) =>
-                  Object.fromEntries(Object.keys(prev).map((key) => [key, { min: 0, max: 1 }]))
+                  Object.fromEntries(
+                    Object.keys(prev).map((key) => [key, { min: 0, max: 1 }]),
+                  ),
                 );
                 setNodeNameFilterByKind((prev) =>
-                  Object.fromEntries(Object.keys(prev).map((key) => [key, "*"]))
+                  Object.fromEntries(
+                    Object.keys(prev).map((key) => [key, "*"]),
+                  ),
                 );
                 setNodeColorByKind(buildDefaultNodeColorByKind(nodeKinds));
               }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:border-[#f69e25] hover:text-[#f69e25] dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:border-brand hover:text-brand dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
               title="Reset filters"
               aria-label="Reset filters"
             >
@@ -960,87 +1140,93 @@ export function GeneGraphView({ nodes, edges }: Props) {
         </div>
 
         <div className="mt-3 overflow-y-auto overflow-x-hidden pr-1 lg:min-h-0 lg:flex-1">
-        <div className="mt-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Layout
-          </p>
-          <select
-            value={layoutMode}
-            onChange={(e) => setLayoutMode(e.target.value as LayoutMode)}
-            className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200"
-          >
-            <option value="default">Default</option>
-            <option value="td">Top-down</option>
-            <option value="bu">Bottom-up</option>
-            <option value="lr">Left-right</option>
-            <option value="rl">Right-left</option>
-            <option value="radialin">Radial in</option>
-            <option value="radialout">Radial out</option>
-          </select>
-        </div>
-
-        <div className="mt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Node
-          </p>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {nodeKinds.map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                onClick={() =>
-                  setNodeKindEnabled((prev) => ({ ...prev, [kind]: !prev[kind] }))
-                }
-                className={`inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs transition ${
-                  nodeKindEnabled[kind] ?? true
-                    ? "border-[#f69e25] bg-[#f69e25]/10 text-[#c47a1a] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                    : "border-gray-300 bg-white text-gray-600 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300"
-                }`}
-                aria-pressed={nodeKindEnabled[kind] ?? true}
-              >
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: getNodeColor(kind, nodeColorByKind) }}
-                />
-                {getNodeLabel(kind)}
-              </button>
-            ))}
+          <div className="mt-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Layout
+            </p>
+            <select
+              value={layoutMode}
+              onChange={(e) => setLayoutMode(e.target.value as LayoutMode)}
+              className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+            >
+              <option value="default">Default</option>
+              <option value="td">Top-down</option>
+              <option value="bu">Bottom-up</option>
+              <option value="lr">Left-right</option>
+              <option value="rl">Right-left</option>
+              <option value="radialin">Radial in</option>
+              <option value="radialout">Radial out</option>
+            </select>
           </div>
-        </div>
 
-        <div className="mt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Edge
-          </p>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {edgeTypes.length === 0 ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400">No edge types</p>
-            ) : (
-              edgeTypes.map((relation) => (
+          <div className="mt-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Node
+            </p>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {nodeKinds.map((kind) => (
                 <button
-                  key={`edge-config-${relation}`}
+                  key={kind}
                   type="button"
                   onClick={() =>
-                    setEdgeTypeEnabled((prev) => ({
+                    setNodeKindEnabled((prev) => ({
                       ...prev,
-                      [relation]: !(prev[relation] ?? true)
+                      [kind]: !prev[kind],
                     }))
                   }
-                  className={`min-w-0 shrink rounded-md border px-2 py-1 text-left text-xs transition ${
-                    edgeTypeEnabled[relation] ?? true
-                      ? "border-[#f69e25] bg-[#f69e25]/10 text-[#c47a1a] dark:bg-[#f69e25]/20 dark:text-[#f69e25]"
-                      : "border-gray-300 bg-white text-gray-600 dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-300"
+                  className={`inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs transition ${
+                    (nodeKindEnabled[kind] ?? true)
+                      ? "border-brand bg-brand/10 text-brand-ink dark:bg-brand/20 dark:text-brand"
+                      : "border-gray-300 bg-white text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   }`}
-                  aria-pressed={edgeTypeEnabled[relation] ?? true}
-                  title={relation}
+                  aria-pressed={nodeKindEnabled[kind] ?? true}
                 >
-                  <span className="line-clamp-1 break-all">{relation}</span>
+                  <span
+                    className="inline-block h-2.5 w-2.5 rounded-full"
+                    style={{
+                      backgroundColor: getNodeColor(kind, nodeColorByKind),
+                    }}
+                  />
+                  {getNodeLabel(kind)}
                 </button>
-              ))
-            )}
+              ))}
+            </div>
           </div>
-        </div>
 
+          <div className="mt-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Edge
+            </p>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {edgeTypes.length === 0 ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  No edge types
+                </p>
+              ) : (
+                edgeTypes.map((relation) => (
+                  <button
+                    key={`edge-config-${relation}`}
+                    type="button"
+                    onClick={() =>
+                      setEdgeTypeEnabled((prev) => ({
+                        ...prev,
+                        [relation]: !(prev[relation] ?? true),
+                      }))
+                    }
+                    className={`min-w-0 shrink rounded-md border px-2 py-1 text-left text-xs transition ${
+                      (edgeTypeEnabled[relation] ?? true)
+                        ? "border-brand bg-brand/10 text-brand-ink dark:bg-brand/20 dark:text-brand"
+                        : "border-gray-300 bg-white text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                    }`}
+                    aria-pressed={edgeTypeEnabled[relation] ?? true}
+                    title={relation}
+                  >
+                    <span className="line-clamp-1 break-all">{relation}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </aside>
       {showAdvancedSettings && typeof document !== "undefined"
@@ -1050,17 +1236,17 @@ export function GeneGraphView({ nodes, edges }: Props) {
               onClick={closeAdvancedSettings}
             >
               <div
-                className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-[#4a515c] dark:bg-[#1d2127]"
+                className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-600 dark:bg-gray-800"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-[#4a515c]">
+                <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-600">
                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                     Advanced Option
                   </p>
                   <button
                     type="button"
                     onClick={closeAdvancedSettings}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:border-[#f69e25] hover:text-[#f69e25] dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:border-brand hover:text-brand dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
                     aria-label="Close advanced settings"
                     title="Close advanced settings"
                   >
@@ -1070,7 +1256,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
 
                 <div className="overflow-y-auto p-4">
                   <div className="space-y-3">
-                    <div className="rounded-md border border-gray-200 p-3 dark:border-[#4a515c]">
+                    <div className="rounded-md border border-gray-200 p-3 dark:border-gray-600">
                       <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
                         Node Option
                       </p>
@@ -1081,35 +1267,45 @@ export function GeneGraphView({ nodes, edges }: Props) {
                         {nodeKinds.map((kind) => (
                           <div
                             key={`node-option-${kind}`}
-                            className="rounded-md border border-gray-200 p-2 dark:border-[#4a515c]"
+                            className="rounded-md border border-gray-200 p-2 dark:border-gray-600"
                           >
                             <p className="line-clamp-1 break-all text-xs font-medium text-gray-700 dark:text-gray-300">
                               {getNodeLabel(kind)}
                             </p>
-                            <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">Color</p>
-                            <div className="mt-1.5 flex items-center gap-1.5 rounded border border-gray-300 bg-white px-1.5 py-1 dark:border-[#4a515c] dark:bg-[#343a43]">
+                            <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
+                              Color
+                            </p>
+                            <div className="mt-1.5 flex items-center gap-1.5 rounded border border-gray-300 bg-white px-1.5 py-1 dark:border-gray-600 dark:bg-gray-700">
                               <input
                                 type="color"
-                                value={draftNodeColorByKind[kind] ?? getNodeColor(kind)}
+                                value={
+                                  draftNodeColorByKind[kind] ??
+                                  getNodeColor(kind)
+                                }
                                 onChange={(e) => {
                                   const nextValue = e.currentTarget.value;
                                   setDraftNodeColorByKind((prev) => ({
                                     ...prev,
-                                    [kind]: nextValue
+                                    [kind]: nextValue,
                                   }));
                                 }}
-                                className="h-7 w-8 shrink-0 cursor-pointer rounded border border-gray-300 bg-white p-0.5 dark:border-[#4a515c] dark:bg-[#343a43]"
+                                className="h-7 w-8 shrink-0 cursor-pointer rounded border border-gray-300 bg-white p-0.5 dark:border-gray-600 dark:bg-gray-700"
                                 aria-label={`${getNodeLabel(kind)} color`}
                               />
                               <input
                                 type="text"
-                                value={(draftNodeColorByKind[kind] ?? getNodeColor(kind)).toUpperCase()}
+                                value={(
+                                  draftNodeColorByKind[kind] ??
+                                  getNodeColor(kind)
+                                ).toUpperCase()}
                                 readOnly
-                                className="h-7 min-w-0 flex-1 rounded border border-gray-300 bg-gray-50 px-2 text-[11px] text-gray-600 outline-none dark:border-[#4a515c] dark:bg-[#2b3138] dark:text-gray-300"
+                                className="h-7 min-w-0 flex-1 rounded border border-gray-300 bg-gray-50 px-2 text-[11px] text-gray-600 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                                 aria-label={`${getNodeLabel(kind)} hex color`}
                               />
                             </div>
-                            <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">Name filter</p>
+                            <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">
+                              Name filter
+                            </p>
                             <input
                               type="text"
                               value={draftNodeNameFilterByKind[kind] ?? "*"}
@@ -1117,29 +1313,31 @@ export function GeneGraphView({ nodes, edges }: Props) {
                                 const nextValue = e.currentTarget.value;
                                 setDraftNodeNameFilterByKind((prev) => ({
                                   ...prev,
-                                  [kind]: nextValue
+                                  [kind]: nextValue,
                                 }));
                               }}
                               placeholder="*"
-                              className="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-xs text-gray-700 outline-none focus:border-[#f69e25] dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200"
+                              className="mt-1 h-8 w-full rounded border border-gray-300 bg-white px-2 text-xs text-gray-700 outline-none focus:border-brand dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
                             />
                           </div>
                         ))}
                       </div>
-      </div>
+                    </div>
 
-                    <div className="rounded-md border border-gray-200 p-3 dark:border-[#4a515c]">
+                    <div className="rounded-md border border-gray-200 p-3 dark:border-gray-600">
                       <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
                         Edge Option
                       </p>
                       <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                         {edgeTypes.length === 0 ? (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">No edge types</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            No edge types
+                          </p>
                         ) : (
                           edgeTypes.map((relation) => (
                             <div
                               key={`advanced-${relation}`}
-                              className="rounded-md border border-gray-200 p-2 dark:border-[#4a515c]"
+                              className="rounded-md border border-gray-200 p-2 dark:border-gray-600"
                             >
                               <p className="line-clamp-1 break-all text-xs font-medium text-gray-700 dark:text-gray-300">
                                 {relation}
@@ -1151,71 +1349,126 @@ export function GeneGraphView({ nodes, edges }: Props) {
                                       source count
                                     </span>
                                     <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                                      {(draftSourceCountRangeByType[relation]?.min ?? 0).toFixed(0)} -{" "}
-                                      {(draftSourceCountRangeByType[relation]?.max ??
-                                        edgeCountLimitsByType[relation]?.sourceMax ??
+                                      {(
+                                        draftSourceCountRangeByType[relation]
+                                          ?.min ?? 0
+                                      ).toFixed(0)}{" "}
+                                      -{" "}
+                                      {(
+                                        draftSourceCountRangeByType[relation]
+                                          ?.max ??
+                                        edgeCountLimitsByType[relation]
+                                          ?.sourceMax ??
                                         0
                                       ).toFixed(0)}
                                     </span>
                                   </div>
                                   <div className="relative mt-1 h-6">
-                                    <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-300 dark:bg-[#4a515c]" />
+                                    <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-300 dark:bg-gray-600" />
                                     <div
-                                      className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#f69e25]"
+                                      className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand"
                                       style={{
                                         left: `${((draftSourceCountRangeByType[relation]?.min ?? 0) / Math.max(1, edgeCountLimitsByType[relation]?.sourceMax ?? 0)) * 100}%`,
-                                        right: `${100 - (((draftSourceCountRangeByType[relation]?.max ??
-                                          edgeCountLimitsByType[relation]?.sourceMax ??
-                                          0) /
-                                          Math.max(1, edgeCountLimitsByType[relation]?.sourceMax ?? 0)) *
-                                          100)}%`
+                                        right: `${
+                                          100 -
+                                          ((draftSourceCountRangeByType[
+                                            relation
+                                          ]?.max ??
+                                            edgeCountLimitsByType[relation]
+                                              ?.sourceMax ??
+                                            0) /
+                                            Math.max(
+                                              1,
+                                              edgeCountLimitsByType[relation]
+                                                ?.sourceMax ?? 0,
+                                            )) *
+                                            100
+                                        }%`,
                                       }}
                                     />
                                     <input
                                       type="range"
                                       min={0}
-                                      max={Math.max(0, edgeCountLimitsByType[relation]?.sourceMax ?? 0)}
+                                      max={Math.max(
+                                        0,
+                                        edgeCountLimitsByType[relation]
+                                          ?.sourceMax ?? 0,
+                                      )}
                                       step={1}
-                                      value={Math.max(0, draftSourceCountRangeByType[relation]?.min ?? 0)}
+                                      value={Math.max(
+                                        0,
+                                        draftSourceCountRangeByType[relation]
+                                          ?.min ?? 0,
+                                      )}
                                       onChange={(e) => {
-                                        const min = Number(e.currentTarget.value);
-                                        setDraftSourceCountRangeByType((prev) => {
-                                          const limit = edgeCountLimitsByType[relation]?.sourceMax ?? 0;
-                                          const current = clampCountRange(prev[relation], limit);
-                                          return {
-                                            ...prev,
-                                            [relation]: {
-                                              min: Math.max(0, Math.min(min, current.max)),
-                                              max: current.max
-                                            }
-                                          };
-                                        });
+                                        const min = Number(
+                                          e.currentTarget.value,
+                                        );
+                                        setDraftSourceCountRangeByType(
+                                          (prev) => {
+                                            const limit =
+                                              edgeCountLimitsByType[relation]
+                                                ?.sourceMax ?? 0;
+                                            const current = clampCountRange(
+                                              prev[relation],
+                                              limit,
+                                            );
+                                            return {
+                                              ...prev,
+                                              [relation]: {
+                                                min: Math.max(
+                                                  0,
+                                                  Math.min(min, current.max),
+                                                ),
+                                                max: current.max,
+                                              },
+                                            };
+                                          },
+                                        );
                                       }}
                                       className="tdp-range-thumb absolute inset-0 w-full appearance-none bg-transparent"
                                     />
                                     <input
                                       type="range"
                                       min={0}
-                                      max={Math.max(0, edgeCountLimitsByType[relation]?.sourceMax ?? 0)}
+                                      max={Math.max(
+                                        0,
+                                        edgeCountLimitsByType[relation]
+                                          ?.sourceMax ?? 0,
+                                      )}
                                       step={1}
                                       value={
-                                        draftSourceCountRangeByType[relation]?.max ??
-                                        edgeCountLimitsByType[relation]?.sourceMax ??
+                                        draftSourceCountRangeByType[relation]
+                                          ?.max ??
+                                        edgeCountLimitsByType[relation]
+                                          ?.sourceMax ??
                                         0
                                       }
                                       onChange={(e) => {
-                                        const max = Number(e.currentTarget.value);
-                                        setDraftSourceCountRangeByType((prev) => {
-                                          const limit = edgeCountLimitsByType[relation]?.sourceMax ?? 0;
-                                          const current = clampCountRange(prev[relation], limit);
-                                          return {
-                                            ...prev,
-                                            [relation]: {
-                                              min: current.min,
-                                              max: Math.min(limit, Math.max(max, current.min))
-                                            }
-                                          };
-                                        });
+                                        const max = Number(
+                                          e.currentTarget.value,
+                                        );
+                                        setDraftSourceCountRangeByType(
+                                          (prev) => {
+                                            const limit =
+                                              edgeCountLimitsByType[relation]
+                                                ?.sourceMax ?? 0;
+                                            const current = clampCountRange(
+                                              prev[relation],
+                                              limit,
+                                            );
+                                            return {
+                                              ...prev,
+                                              [relation]: {
+                                                min: current.min,
+                                                max: Math.min(
+                                                  limit,
+                                                  Math.max(max, current.min),
+                                                ),
+                                              },
+                                            };
+                                          },
+                                        );
                                       }}
                                       className="tdp-range-thumb absolute inset-0 w-full appearance-none bg-transparent"
                                     />
@@ -1228,73 +1481,130 @@ export function GeneGraphView({ nodes, edges }: Props) {
                                       destination count
                                     </span>
                                     <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                                      {(draftDestinationCountRangeByType[relation]?.min ?? 0).toFixed(0)} -{" "}
-                                      {(draftDestinationCountRangeByType[relation]?.max ??
-                                        edgeCountLimitsByType[relation]?.destinationMax ??
+                                      {(
+                                        draftDestinationCountRangeByType[
+                                          relation
+                                        ]?.min ?? 0
+                                      ).toFixed(0)}{" "}
+                                      -{" "}
+                                      {(
+                                        draftDestinationCountRangeByType[
+                                          relation
+                                        ]?.max ??
+                                        edgeCountLimitsByType[relation]
+                                          ?.destinationMax ??
                                         0
                                       ).toFixed(0)}
                                     </span>
                                   </div>
                                   <div className="relative mt-1 h-6">
-                                    <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-300 dark:bg-[#4a515c]" />
+                                    <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-300 dark:bg-gray-600" />
                                     <div
-                                      className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#f69e25]"
+                                      className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand"
                                       style={{
                                         left: `${((draftDestinationCountRangeByType[relation]?.min ?? 0) / Math.max(1, edgeCountLimitsByType[relation]?.destinationMax ?? 0)) * 100}%`,
-                                        right: `${100 - (((draftDestinationCountRangeByType[relation]?.max ??
-                                          edgeCountLimitsByType[relation]?.destinationMax ??
-                                          0) /
-                                          Math.max(1, edgeCountLimitsByType[relation]?.destinationMax ?? 0)) *
-                                          100)}%`
+                                        right: `${
+                                          100 -
+                                          ((draftDestinationCountRangeByType[
+                                            relation
+                                          ]?.max ??
+                                            edgeCountLimitsByType[relation]
+                                              ?.destinationMax ??
+                                            0) /
+                                            Math.max(
+                                              1,
+                                              edgeCountLimitsByType[relation]
+                                                ?.destinationMax ?? 0,
+                                            )) *
+                                            100
+                                        }%`,
                                       }}
                                     />
                                     <input
                                       type="range"
                                       min={0}
-                                      max={Math.max(0, edgeCountLimitsByType[relation]?.destinationMax ?? 0)}
+                                      max={Math.max(
+                                        0,
+                                        edgeCountLimitsByType[relation]
+                                          ?.destinationMax ?? 0,
+                                      )}
                                       step={1}
-                                      value={Math.max(0, draftDestinationCountRangeByType[relation]?.min ?? 0)}
+                                      value={Math.max(
+                                        0,
+                                        draftDestinationCountRangeByType[
+                                          relation
+                                        ]?.min ?? 0,
+                                      )}
                                       onChange={(e) => {
-                                        const min = Number(e.currentTarget.value);
-                                        setDraftDestinationCountRangeByType((prev) => {
-                                          const limit =
-                                            edgeCountLimitsByType[relation]?.destinationMax ?? 0;
-                                          const current = clampCountRange(prev[relation], limit);
-                                          return {
-                                            ...prev,
-                                            [relation]: {
-                                              min: Math.max(0, Math.min(min, current.max)),
-                                              max: current.max
-                                            }
-                                          };
-                                        });
+                                        const min = Number(
+                                          e.currentTarget.value,
+                                        );
+                                        setDraftDestinationCountRangeByType(
+                                          (prev) => {
+                                            const limit =
+                                              edgeCountLimitsByType[relation]
+                                                ?.destinationMax ?? 0;
+                                            const current = clampCountRange(
+                                              prev[relation],
+                                              limit,
+                                            );
+                                            return {
+                                              ...prev,
+                                              [relation]: {
+                                                min: Math.max(
+                                                  0,
+                                                  Math.min(min, current.max),
+                                                ),
+                                                max: current.max,
+                                              },
+                                            };
+                                          },
+                                        );
                                       }}
                                       className="tdp-range-thumb absolute inset-0 w-full appearance-none bg-transparent"
                                     />
                                     <input
                                       type="range"
                                       min={0}
-                                      max={Math.max(0, edgeCountLimitsByType[relation]?.destinationMax ?? 0)}
+                                      max={Math.max(
+                                        0,
+                                        edgeCountLimitsByType[relation]
+                                          ?.destinationMax ?? 0,
+                                      )}
                                       step={1}
                                       value={
-                                        draftDestinationCountRangeByType[relation]?.max ??
-                                        edgeCountLimitsByType[relation]?.destinationMax ??
+                                        draftDestinationCountRangeByType[
+                                          relation
+                                        ]?.max ??
+                                        edgeCountLimitsByType[relation]
+                                          ?.destinationMax ??
                                         0
                                       }
                                       onChange={(e) => {
-                                        const max = Number(e.currentTarget.value);
-                                        setDraftDestinationCountRangeByType((prev) => {
-                                          const limit =
-                                            edgeCountLimitsByType[relation]?.destinationMax ?? 0;
-                                          const current = clampCountRange(prev[relation], limit);
-                                          return {
-                                            ...prev,
-                                            [relation]: {
-                                              min: current.min,
-                                              max: Math.min(limit, Math.max(max, current.min))
-                                            }
-                                          };
-                                        });
+                                        const max = Number(
+                                          e.currentTarget.value,
+                                        );
+                                        setDraftDestinationCountRangeByType(
+                                          (prev) => {
+                                            const limit =
+                                              edgeCountLimitsByType[relation]
+                                                ?.destinationMax ?? 0;
+                                            const current = clampCountRange(
+                                              prev[relation],
+                                              limit,
+                                            );
+                                            return {
+                                              ...prev,
+                                              [relation]: {
+                                                min: current.min,
+                                                max: Math.min(
+                                                  limit,
+                                                  Math.max(max, current.min),
+                                                ),
+                                              },
+                                            };
+                                          },
+                                        );
                                       }}
                                       className="tdp-range-thumb absolute inset-0 w-full appearance-none bg-transparent"
                                     />
@@ -1307,17 +1617,24 @@ export function GeneGraphView({ nodes, edges }: Props) {
                                       score
                                     </span>
                                     <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                                      {(draftScoreRangeByType[relation]?.min ?? 0).toFixed(2)} -{" "}
-                                      {(draftScoreRangeByType[relation]?.max ?? 1).toFixed(2)}
+                                      {(
+                                        draftScoreRangeByType[relation]?.min ??
+                                        0
+                                      ).toFixed(2)}{" "}
+                                      -{" "}
+                                      {(
+                                        draftScoreRangeByType[relation]?.max ??
+                                        1
+                                      ).toFixed(2)}
                                     </span>
                                   </div>
                                   <div className="relative mt-1 h-6">
-                                    <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-300 dark:bg-[#4a515c]" />
+                                    <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-300 dark:bg-gray-600" />
                                     <div
-                                      className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#f69e25]"
+                                      className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand"
                                       style={{
                                         left: `${(draftScoreRangeByType[relation]?.min ?? 0) * 100}%`,
-                                        right: `${100 - (draftScoreRangeByType[relation]?.max ?? 1) * 100}%`
+                                        right: `${100 - (draftScoreRangeByType[relation]?.max ?? 1) * 100}%`,
                                       }}
                                     />
                                     <input
@@ -1325,17 +1642,25 @@ export function GeneGraphView({ nodes, edges }: Props) {
                                       min={0}
                                       max={1}
                                       step={0.01}
-                                      value={draftScoreRangeByType[relation]?.min ?? 0}
+                                      value={
+                                        draftScoreRangeByType[relation]?.min ??
+                                        0
+                                      }
                                       onChange={(e) => {
-                                        const min = Number(e.currentTarget.value);
+                                        const min = Number(
+                                          e.currentTarget.value,
+                                        );
                                         setDraftScoreRangeByType((prev) => {
-                                          const current = prev[relation] ?? { min: 0, max: 1 };
+                                          const current = prev[relation] ?? {
+                                            min: 0,
+                                            max: 1,
+                                          };
                                           return {
                                             ...prev,
                                             [relation]: {
                                               min,
-                                              max: Math.max(min, current.max)
-                                            }
+                                              max: Math.max(min, current.max),
+                                            },
                                           };
                                         });
                                       }}
@@ -1346,17 +1671,25 @@ export function GeneGraphView({ nodes, edges }: Props) {
                                       min={0}
                                       max={1}
                                       step={0.01}
-                                      value={draftScoreRangeByType[relation]?.max ?? 1}
+                                      value={
+                                        draftScoreRangeByType[relation]?.max ??
+                                        1
+                                      }
                                       onChange={(e) => {
-                                        const max = Number(e.currentTarget.value);
+                                        const max = Number(
+                                          e.currentTarget.value,
+                                        );
                                         setDraftScoreRangeByType((prev) => {
-                                          const current = prev[relation] ?? { min: 0, max: 1 };
+                                          const current = prev[relation] ?? {
+                                            min: 0,
+                                            max: 1,
+                                          };
                                           return {
                                             ...prev,
                                             [relation]: {
                                               min: Math.min(current.min, max),
-                                              max
-                                            }
+                                              max,
+                                            },
                                           };
                                         });
                                       }}
@@ -1373,25 +1706,25 @@ export function GeneGraphView({ nodes, edges }: Props) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-3 dark:border-[#4a515c]">
+                <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-3 dark:border-gray-600">
                   <button
                     type="button"
                     onClick={closeAdvancedSettings}
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:border-[#f69e25] hover:text-[#f69e25] dark:border-[#4a515c] dark:bg-[#343a43] dark:text-gray-200"
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:border-brand hover:text-brand dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={applyAdvancedSettings}
-                    className="rounded-md border border-[#f69e25] bg-[#f69e25]/10 px-3 py-1.5 text-xs font-medium text-[#c47a1a] hover:bg-[#f69e25]/20 dark:text-[#f69e25]"
+                    className="rounded-md border border-brand bg-brand/10 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand/20 dark:text-brand"
                   >
                     Apply
                   </button>
                 </div>
-      </div>
+              </div>
             </div>,
-            document.body
+            document.body,
           )
         : null}
     </div>

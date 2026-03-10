@@ -21,7 +21,9 @@ export function ChatPage() {
   const sessions = useChatSessionStore((state) => state.sessions);
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const sessionsLoading = useChatSessionStore((state) => state.sessionsLoading);
-  const activeSessionLoading = useChatSessionStore((state) => state.activeSessionLoading);
+  const activeSessionLoading = useChatSessionStore(
+    (state) => state.activeSessionLoading,
+  );
 
   const showMainLoading =
     (sessionsLoading && sessions.length === 0) ||
@@ -29,7 +31,7 @@ export function ChatPage() {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <header className="z-40 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/95 md:px-6">
+      <header className="z-40 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950 md:px-6">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -37,8 +39,18 @@ export function ChatPage() {
             className="rounded p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200 md:hidden"
             aria-label={text.openMenu}
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
           <div className="flex items-center gap-2">
@@ -65,7 +77,7 @@ export function ChatPage() {
         {/* Sidebar: drawer on mobile, always visible on md+ */}
         <div
           className={`
-            fixed left-0 top-12 bottom-0 z-40 flex w-72 min-h-0 flex-col bg-white shadow-xl transition-transform duration-200 ease-out dark:bg-gray-800
+            fixed left-0 top-12 bottom-0 z-40 flex w-72 min-h-0 flex-col bg-white shadow-xl transition-transform duration-200 ease-out dark:bg-gray-950
             md:static md:top-auto md:min-h-0 md:overflow-hidden md:shadow-none md:transition-none
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           `}
@@ -81,7 +93,7 @@ export function ChatPage() {
           <div className="min-h-0 flex-1">
             {showMainLoading ? (
               <div
-                className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-16 dark:border-gray-700 dark:bg-gray-800"
+                className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-16 dark:border-gray-700 dark:bg-gray-950"
                 aria-busy="true"
                 aria-live="polite"
               >
@@ -97,7 +109,7 @@ export function ChatPage() {
             )}
           </div>
           {activeTab === "chat" ? (
-            <div className="sticky bottom-0 mt-4 shrink-0 border-t border-gray-200 bg-gray-50 pt-4 dark:border-gray-700 dark:bg-gray-800">
+            <div className="sticky bottom-0 mt-4 shrink-0 border-t border-gray-200 bg-gray-50 pt-4 dark:border-gray-700 dark:bg-gray-950/0">
               <ChatWorkspace />
             </div>
           ) : null}

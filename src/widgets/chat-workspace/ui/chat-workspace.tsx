@@ -12,8 +12,10 @@ export function ChatWorkspace() {
   const session = useChatSessionStore((state) => state.activeSession);
   const { query, setQuery, submit } = useSendQuery();
   const isMac = useMemo(
-    () => typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform),
-    []
+    () =>
+      typeof navigator !== "undefined" &&
+      /Mac|iPhone|iPad|iPod/.test(navigator.platform),
+    [],
   );
 
   if (!session) {
@@ -28,7 +30,8 @@ export function ChatWorkspace() {
   const lastIsClarifying =
     lastMessage?.role === "assistant" &&
     (lastMessage.isClarifyingQuestion === true ||
-      (typeof lastMessage.content === "string" && lastMessage.content.trim().endsWith("?")));
+      (typeof lastMessage.content === "string" &&
+        lastMessage.content.trim().endsWith("?")));
 
   return (
     <section>

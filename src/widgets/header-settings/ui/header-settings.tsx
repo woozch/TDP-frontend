@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LANGUAGE_OPTIONS, useLanguage } from "@/shared/language/language-context";
+import {
+  LANGUAGE_OPTIONS,
+  useLanguage,
+} from "@/shared/language/language-context";
 import { type Language } from "@/shared/language/language-config";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { Theme, useTheme } from "@/shared/theme/theme-context";
@@ -15,7 +18,9 @@ export function HeaderSettings() {
   const [draftLanguage, setDraftLanguage] = useState<Language>(language);
   const [languageListOpen, setLanguageListOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const selectedLanguage = LANGUAGE_OPTIONS.find((item) => item.code === draftLanguage) ?? LANGUAGE_OPTIONS[0];
+  const selectedLanguage =
+    LANGUAGE_OPTIONS.find((item) => item.code === draftLanguage) ??
+    LANGUAGE_OPTIONS[0];
 
   useEffect(() => {
     if (!open) {
@@ -69,7 +74,7 @@ export function HeaderSettings() {
             onClick={() => setOpen(false)}
           />
           <div
-            className="absolute right-0 top-full z-60 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+            className="absolute right-0 top-full z-60 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-2 shadow-lg dark:border-gray-700 dark:bg-gray-950"
             role="menu"
           >
             <div className="px-3 py-2">
@@ -85,7 +90,7 @@ export function HeaderSettings() {
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
                     draftTheme === "light"
                       ? "border-brand bg-brand/15 text-brand-ink dark:border-brand dark:bg-brand/20 dark:text-brand"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
                 >
                   Light
@@ -98,7 +103,7 @@ export function HeaderSettings() {
                   className={`flex-1 rounded-md border px-3 py-1.5 text-sm transition ${
                     draftTheme === "dark"
                       ? "border-brand bg-brand/15 text-brand-ink dark:border-brand dark:bg-brand/20 dark:text-brand"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500"
                   }`}
                 >
                   Dark
@@ -115,19 +120,21 @@ export function HeaderSettings() {
                   aria-haspopup="listbox"
                   aria-expanded={languageListOpen}
                   onClick={() => setLanguageListOpen((prev) => !prev)}
-                  className="flex w-full items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
+                  className="flex w-full items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500"
                 >
                   <span className="inline-flex items-center gap-2">
                     <span aria-hidden>{selectedLanguage.flag}</span>
                     <span>{selectedLanguage.label}</span>
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">▼</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    ▼
+                  </span>
                 </button>
                 {languageListOpen ? (
                   <ul
                     role="listbox"
                     aria-label="Language options"
-                    className="absolute left-0 right-0 z-30 mt-1 max-h-44 overflow-y-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-600 dark:bg-gray-800"
+                    className="absolute left-0 right-0 z-30 mt-1 max-h-44 overflow-y-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-600 dark:bg-gray-900"
                   >
                     {LANGUAGE_OPTIONS.map((item) => (
                       <li key={item.code}>

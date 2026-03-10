@@ -73,7 +73,7 @@ export function SignInPage() {
         />
       </div>
 
-      <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/95 md:px-6">
+      <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950 md:px-6">
         <div className="flex items-center gap-2">
           <AppLogo size={26} />
           <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">
@@ -83,7 +83,7 @@ export function SignInPage() {
         <HeaderSettings />
       </header>
       <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-white/35 bg-white/30 p-8 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-gray-800/50">
+        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-white/35 bg-white/30 p-8 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-gray-950/50">
           <div className="text-center">
             <h1 className="flex items-center justify-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
               <span>{text.appName}</span>
@@ -113,7 +113,7 @@ export function SignInPage() {
             <button
               type="button"
               onClick={() => void handleDevSignIn()}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <span role="img" aria-label="Gear" className="mr-0 text-m">
                 🛠️
@@ -125,7 +125,7 @@ export function SignInPage() {
               type="button"
               onClick={() => void handleGoogleSignIn()}
               disabled={isSigningInWithGoogle}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
                 <path

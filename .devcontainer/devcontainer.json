@@ -3,14 +3,16 @@
   "build": {
     "dockerfile": "Dockerfile",
     "context": "..",
-    "options": [
-            "--network=host"
-        ]
+    "options": ["--network=host"]
   },
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceFolder": "/workspaces/TDP-frontend",
   "remoteUser": "node",
-  "updateRemoteUserUID": true,
-  "mounts": ["source=tdp-npm-cache,target=/home/node/.npm,type=volume"],
+  "containerUser": "node",
+  // "updateRemoteUserUID": true,
+  "mounts": [
+    // "source=/home/woojaechang/.gitconfig,target=/home/node/.gitconfig,type=bind,readonly,consistency=cached",
+    "source=tdp-npm-cache,target=/home/node/.npm,type=volume"
+  ],
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {
@@ -19,7 +21,13 @@
     }
   },
   "postCreateCommand": "npm install",
+  "postStartCommand": "mkdir -p /home/node && printf '[user]\\n\\tname = woozch\\n\\temail = herorise27@gmail.com\\n' > /home/node/.gitconfig && chown node:node /home/node/.gitconfig 2>/dev/null || true",
+  // "postStartCommand": "rm -f /tmp/cursor-remote-lock.* || true",
   "postAttachCommand": "echo 'Run: npm run dev -- --hostname 0.0.0.0 --port 3000'",
+  "remoteEnv": {
+    "GIT_CONFIG_GLOBAL": "/home/node/.gitconfig",
+    "HOME": "/home/node"
+  },
   "customizations": {
     "vscode": {
       "settings": {

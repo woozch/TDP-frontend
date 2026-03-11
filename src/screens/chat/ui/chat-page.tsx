@@ -18,10 +18,18 @@ export function ChatPage() {
   const text = getUiText(language);
   const { retry } = useLoadSession(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   // Default sidebar open on desktop (md+), closed on mobile
   useEffect(() => {
-    setSidebarOpen(window.matchMedia("(min-width: 768px)").matches);
+    const mql = window.matchMedia("(min-width: 768px)");
+    setIsDesktop(mql.matches);
+    setSidebarOpen(mql.matches);
+    const handler = () => {
+      setIsDesktop(mql.matches);
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
   }, []);
   const sessions = useChatSessionStore((state) => state.sessions);
   const activeSession = useChatSessionStore((state) => state.activeSession);
@@ -86,7 +94,9 @@ export function ChatPage() {
           <div className="flex min-h-0 min-w-72 flex-1 flex-col">
             <LeftSidebar
               onClose={() => setSidebarOpen(false)}
-              onSessionSelect={() => setSidebarOpen(false)}
+              onSessionSelect={() => {
+                if (!isDesktop) setSidebarOpen(false);
+              }}
               onRetryLoad={retry}
             />
           </div>

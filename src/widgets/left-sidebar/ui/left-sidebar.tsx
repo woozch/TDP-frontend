@@ -11,6 +11,8 @@ import { getLanguageOption } from "@/shared/language/language-config";
 import { useCreateSession } from "@/features/create-session/model/use-create-session";
 import { useDeleteSession } from "@/features/delete-session/model/use-delete-session";
 import { useSelectSession } from "@/features/select-session/model/use-select-session";
+import { UiButton } from "@/shared/ui/button";
+import { UiCard } from "@/shared/ui/card";
 
 interface LeftSidebarProps {
   onClose?: () => void;
@@ -151,14 +153,16 @@ export function LeftSidebar({
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {text.reportHistory}
           </p>
-          <button
+          <UiButton
             type="button"
             onClick={() => void createSession()}
             disabled={sessionsLoading}
-            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:border-brand hover:text-brand disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-brand dark:hover:text-brand"
+            variant="outline"
+            size="xs"
+            className="px-2 py-1 text-xs hover:border-brand hover:text-brand dark:hover:border-brand dark:hover:text-brand"
           >
             {text.newReport}
-          </button>
+          </UiButton>
         </div>
         <p className="mb-2 text-[11px] text-gray-500 dark:text-gray-400">
           {text.historyDescription}
@@ -377,7 +381,7 @@ export function LeftSidebar({
             </div>
           </div>
         </section>
-        <button
+        <UiButton
           type="button"
           onClick={() => {
             if (authSession?.user) {
@@ -416,14 +420,17 @@ export function LeftSidebar({
             })();
           }}
           disabled={!authSession?.user && isSigningInWithGoogle}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:border-brand hover:text-brand dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-brand dark:hover:text-brand"
+          fullWidth
+          variant="outline"
+          size="sm"
+          className="rounded-lg px-3 py-2 text-sm hover:border-brand hover:text-brand dark:hover:border-brand dark:hover:text-brand"
         >
           {authSession?.user
             ? text.signOut
             : isSigningInWithGoogle
               ? `${text.signInWithGoogle}...`
               : text.signInWithGoogle}
-        </button>
+        </UiButton>
         {!authSession?.user && googleSignInError ? (
           <p className="text-xs text-red-600 dark:text-red-400">
             {googleSignInError}
@@ -431,7 +438,7 @@ export function LeftSidebar({
         ) : null}
       </div>
 
-      {/* Delete report confirmation modal (portal so it appears above overlay on mobile) */}
+          {/* Delete report confirmation modal (portal so it appears above overlay on mobile) */}
       {sessionToDelete && typeof document !== "undefined"
         ? createPortal(
             <div
@@ -441,8 +448,8 @@ export function LeftSidebar({
               aria-labelledby="delete-dialog-title"
               aria-describedby="delete-dialog-desc"
             >
-              <div
-                className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+              <UiCard
+                className="w-full max-w-sm p-4"
                 onKeyDown={(e) => {
                   if (e.key === "Escape") setSessionToDelete(null);
                 }}
@@ -460,22 +467,26 @@ export function LeftSidebar({
                   {text.deleteReportWarning(sessionToDelete.title)}
                 </p>
                 <div className="mt-4 flex justify-end gap-2">
-                  <button
+                  <UiButton
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg px-3 py-1.5 text-sm"
                     onClick={() => setSessionToDelete(null)}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                   >
                     {text.cancel}
-                  </button>
-                  <button
+                  </UiButton>
+                  <UiButton
                     type="button"
+                    variant="danger"
+                    size="sm"
+                    className="rounded-lg px-3 py-1.5 text-sm"
                     onClick={handleConfirmDelete}
-                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
                   >
                     {text.delete}
-                  </button>
+                  </UiButton>
                 </div>
-              </div>
+              </UiCard>
             </div>,
             document.body,
           )

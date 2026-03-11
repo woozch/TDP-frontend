@@ -150,6 +150,9 @@ function FinalReportCarousel({
   messages: { id: string; role: string; content: string; isClarifyingQuestion?: boolean }[];
   text: ReturnType<typeof getUiText>;
 }) {
+  const removeMessageFromActiveSession = useChatSessionStore(
+    (state) => state.removeMessageFromActiveSession
+  );
   const reportMessages = useMemo(
     () =>
       messages.filter(
@@ -161,10 +164,11 @@ function FinalReportCarousel({
   const [currentIndex, setCurrentIndex] = useState(
     Math.max(0, reportMessages.length - 1)
   );
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (reportMessages.length > 0) {
-      setCurrentIndex(reportMessages.length - 1);
+      setCurrentIndex((i) => Math.min(i, reportMessages.length - 1));
     }
   }, [reportMessages.length]);
 
@@ -176,19 +180,50 @@ function FinalReportCarousel({
   const total = reportMessages.length;
   const canPrev = clampedIndex > 0;
   const canNext = clampedIndex < total - 1;
+  const content = currentReport?.content?.trim() ?? "";
+
+  const handleCopy = async () => {
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleExportMarkdown = () => {
+    if (!content) return;
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `report-${clampedIndex + 1}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteReport = () => {
+    if (!currentReport) return;
+    if (!window.confirm(text.deleteReportTabConfirm)) return;
+    removeMessageFromActiveSession(currentReport.id);
+    setCurrentIndex((i) => Math.max(0, Math.min(i, reportMessages.length - 2)));
+  };
+
+  const iconButtonClass =
+    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40";
 
   return (
     <article className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <FinalReportMarkdown
-          content={
-            currentReport?.content?.trim() || text.waitingFinalReport
-          }
+          content={content || text.waitingFinalReport}
         />
       </div>
-      {total > 1 ? (
+      {total >= 1 ? (
         <nav
-          className="flex shrink-0 items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 dark:border-gray-600 dark:bg-gray-800"
+          className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 dark:border-gray-600 dark:bg-gray-800"
           aria-label="Report navigation"
         >
           <button
@@ -197,7 +232,7 @@ function FinalReportCarousel({
             disabled={!canPrev}
             aria-label={text.reportNavPrev}
             title={text.reportNavPrev}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+            className={iconButtonClass}
           >
             <span aria-hidden>&lt;</span>
           </button>
@@ -218,9 +253,55 @@ function FinalReportCarousel({
             disabled={!canNext}
             aria-label={text.reportNavNext}
             title={text.reportNavNext}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+            className={iconButtonClass}
           >
             <span aria-hidden>&gt;</span>
+          </button>
+          <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
+          <button
+            type="button"
+            onClick={handleDeleteReport}
+            title={text.deleteReportTab}
+            aria-label={text.deleteReportTab}
+            className={iconButtonClass}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+              <path d="M10 11v6M14 11v6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={!content}
+            title={copied ? text.copyReportSuccess : text.copyReportContent}
+            aria-label={text.copyReportContent}
+            className={iconButtonClass}
+          >
+            {copied ? (
+              <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleExportMarkdown}
+            disabled={!content}
+            title={text.exportMarkdown}
+            aria-label={text.exportMarkdown}
+            className={iconButtonClass}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+              <path d="M8 7h8M8 11h8M8 15h4" />
+            </svg>
           </button>
         </nav>
       ) : null}

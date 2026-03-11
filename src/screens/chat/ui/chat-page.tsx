@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useActiveTab } from "@/features/select-tab/model/use-active-tab";
 import { useLoadSession } from "@/features/load-session/model/use-load-session";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
-import { AppLogo } from "@/shared/ui/app-logo";
 import { LeftSidebar } from "@/widgets/left-sidebar";
 import { ChatWorkspace } from "@/widgets/chat-workspace";
 import { ResultTabs } from "@/widgets/result-tabs";
 import { HeaderSettings } from "@/widgets/header-settings";
+import { AppHeader } from "@/widgets/app-header/ui/app-header";
 
 export function ChatPage() {
   const { activeTab } = useActiveTab();
@@ -18,6 +18,11 @@ export function ChatPage() {
   const text = getUiText(language);
   const { retry } = useLoadSession(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Default sidebar open on desktop (md+), closed on mobile
+  useEffect(() => {
+    setSidebarOpen(window.matchMedia("(min-width: 768px)").matches);
+  }, []);
   const sessions = useChatSessionStore((state) => state.sessions);
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const sessionsLoading = useChatSessionStore((state) => state.sessionsLoading);
@@ -31,40 +36,33 @@ export function ChatPage() {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <header className="z-40 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950 md:px-6">
-        <div className="flex items-center gap-3">
+        <AppHeader
+        leftSlot={
           <button
             type="button"
             onClick={() => setSidebarOpen((open) => !open)}
-            className="rounded p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200 md:hidden"
-            aria-label={text.openMenu}
+            className="rounded p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+            aria-label={sidebarOpen ? text.closeMenu : text.openMenu}
           >
             <svg
               className="h-5 w-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
+              <path d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="flex items-center gap-2">
-            <AppLogo size={30} />
-            <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">
-              {text.appName}
-            </h1>
-          </div>
-        </div>
-        <HeaderSettings />
-      </header>
+        }
+        rightSlot={<HeaderSettings />}
+        logoSize={30}
+      />
 
       <div className="flex min-h-0 flex-1">
-        {/* Mobile overlay when sidebar is open */}
+        {/* Overlay when sidebar is open (mobile only); render only when open so no gray flash */}
         {sidebarOpen ? (
           <button
             type="button"
@@ -74,19 +72,24 @@ export function ChatPage() {
           />
         ) : null}
 
-        {/* Sidebar: drawer on mobile, always visible on md+ */}
+        {/* Desktop (md+): in-flow sidebar with width toggle; Mobile: fixed overlay with slide */}
         <div
           className={`
-            fixed left-0 top-12 bottom-0 z-40 flex w-72 min-h-0 flex-col bg-white shadow-xl transition-transform duration-200 ease-out dark:bg-gray-950
-            md:static md:top-auto md:min-h-0 md:overflow-hidden md:shadow-none md:transition-none
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+            flex flex-col bg-white shadow-xl dark:bg-gray-950
+            min-h-0
+            fixed left-0 top-12 bottom-0 z-40 w-72
+            transition-[transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform
+            md:static md:top-0 md:left-0 md:z-auto md:shrink-0 md:overflow-hidden md:transition-[width] md:duration-200 md:ease-out md:will-change-auto
+            ${sidebarOpen ? "translate-x-0 md:w-72" : "-translate-x-full md:translate-x-0 md:w-0"}
           `}
         >
-          <LeftSidebar
-            onClose={() => setSidebarOpen(false)}
-            onSessionSelect={() => setSidebarOpen(false)}
-            onRetryLoad={retry}
-          />
+          <div className="flex min-h-0 min-w-72 flex-1 flex-col">
+            <LeftSidebar
+              onClose={() => setSidebarOpen(false)}
+              onSessionSelect={() => setSidebarOpen(false)}
+              onRetryLoad={retry}
+            />
+          </div>
         </div>
 
         <section className="relative flex min-h-0 min-w-0 flex-1 flex-col p-4 sm:p-6">

@@ -8,6 +8,7 @@ import {
 import { type Language } from "@/shared/language/language-config";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { Theme, useTheme } from "@/shared/theme/theme-context";
+import { UiButton } from "@/shared/ui/button";
 
 export function HeaderSettings() {
   const { theme, setTheme } = useTheme();
@@ -162,18 +163,20 @@ export function HeaderSettings() {
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-3 py-2 dark:border-gray-700">
-              <button
+              <UiButton
                 type="button"
                 onClick={() => {
                   setDraftTheme(theme);
                   setDraftLanguage(language);
                   setLanguageListOpen(false);
                 }}
-                className="rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-500"
+                variant="outline"
+                size="sm"
+                className="px-3 py-1.5 text-sm"
               >
                 {text.reset}
-              </button>
-              <button
+              </UiButton>
+              <UiButton
                 type="button"
                 onClick={() => {
                   setTheme(draftTheme);
@@ -182,10 +185,12 @@ export function HeaderSettings() {
                   setOpen(false);
                 }}
                 disabled={!hasChanges}
-                className="rounded-md bg-brand px-3 py-1.5 text-sm text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+                variant="primary"
+                size="sm"
+                className="px-3 py-1.5 text-sm"
               >
                 {text.apply}
-              </button>
+              </UiButton>
             </div>
           </div>
         </>

@@ -86,6 +86,11 @@ type UiText = {
   reportNavNext: string;
   reportPageOf: (current: number, total: number) => string;
   reportReadyInTab: string;
+  copyReportContent: string;
+  exportMarkdown: string;
+  deleteReportTab: string;
+  deleteReportTabConfirm: string;
+  copyReportSuccess: string;
 };
 
 const en: UiText = {
@@ -156,7 +161,7 @@ const en: UiText = {
   loadingAbstract: "Loading abstract...",
   loadReferenceFailed: "Failed to load reference detail",
   openSource: "Open source",
-  signinDescription: "Where Lab-Proven Data Meets AI Insight: Precision Target Discovery Platform",
+  signinDescription: "Where Lab-Proven Data Meets AI Insight:\nTarget Discovery Platform",
   googleAccessDenied:
     "This Google account is not authorized. Ask admin to register your company domain or personal email.",
   googleOAuthCallbackError:
@@ -179,6 +184,11 @@ const en: UiText = {
   reportNavNext: "Next report",
   reportPageOf: (current, total) => `${current} of ${total}`,
   reportReadyInTab: "Report ready. View in Final Report tab.",
+  copyReportContent: "Copy full content",
+  exportMarkdown: "Export as Markdown",
+  deleteReportTab: "Delete this report",
+  deleteReportTabConfirm: "Remove this report from the list?",
+  copyReportSuccess: "Copied to clipboard",
 };
 
 const ko: UiText = {
@@ -248,7 +258,7 @@ const ko: UiText = {
   loadingAbstract: "초록을 불러오는 중...",
   loadReferenceFailed: "참고문헌 상세를 불러오지 못했습니다",
   openSource: "원문 열기",
-  signinDescription: "실험실의 실증 데이터와 AI의 통찰이 만나는 정밀 타겟 발굴 플랫폼",
+  signinDescription: "실험실의 실증 데이터와 AI의 통찰이 만나는\n정밀 타겟 발굴 플랫폼",
   googleAccessDenied:
     "이 Google 계정은 접근 권한이 없습니다. 관리자에게 회사 도메인 또는 개인 이메일 등록을 요청하세요.",
   googleOAuthCallbackError:
@@ -271,6 +281,11 @@ const ko: UiText = {
   reportNavNext: "다음 리포트",
   reportPageOf: (current, total) => `${current} / ${total}`,
   reportReadyInTab: "리포트가 준비되었습니다. 최종 리포트 탭에서 확인하세요.",
+  copyReportContent: "내용 전체 복사",
+  exportMarkdown: "Markdown으로 내보내기",
+  deleteReportTab: "이 리포트 삭제",
+  deleteReportTabConfirm: "이 리포트를 목록에서 제거할까요?",
+  copyReportSuccess: "클립보드에 복사됨",
 };
 
 export function getUiText(language: Language): UiText {

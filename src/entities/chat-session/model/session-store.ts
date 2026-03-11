@@ -55,6 +55,7 @@ interface ChatSessionStore {
   setError: (message: string) => void;
   setSessionTitle: (sessionId: string, title: string, updatedAt?: string) => void;
   setSessionLanguage: (sessionId: string, language: SessionSummary["language"], updatedAt?: string) => void;
+  removeMessageFromActiveSession: (messageId: string) => void;
 }
 
 const defaultTabStatus = (): Record<TabKey, TabStatus> => ({
@@ -336,6 +337,25 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
         item.id === sessionId ? { ...item, language, updatedAt: nextUpdatedAt } : item
       );
       return { sessions };
+    }),
+  removeMessageFromActiveSession: (messageId) =>
+    set((state) => {
+      if (!state.activeSession) return state;
+      const messages = state.activeSession.messages.filter((m) => m.id !== messageId);
+      const hasReport = messages.some(
+        (m) => m.role === "assistant" && m.isClarifyingQuestion !== true
+      );
+      const tabStatus = {
+        ...state.activeSession.tabStatus,
+        answer: hasReport ? state.activeSession.tabStatus.answer : "idle"
+      };
+      return {
+        activeSession: {
+          ...state.activeSession,
+          messages,
+          tabStatus
+        }
+      };
     })
 }));
 

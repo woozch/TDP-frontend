@@ -5,8 +5,10 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
+import { UiButton } from "@/shared/ui/button";
+import { UiCard } from "@/shared/ui/card";
+import { AppHeader } from "@/widgets/app-header/ui/app-header";
 import { HeaderSettings } from "@/widgets/header-settings";
-import { AppLogo } from "@/shared/ui/app-logo";
 import signInBackground from "@/shared/assets/images/signin-background.png";
 
 export function SignInPage() {
@@ -73,23 +75,23 @@ export function SignInPage() {
         />
       </div>
 
-      <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950 md:px-6">
-        <div className="flex items-center gap-2">
-          <AppLogo size={26} />
-          <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 sm:text-base">
-            {text.appName}
-          </h1>
-        </div>
-        <HeaderSettings />
-      </header>
+      <AppHeader rightSlot={<HeaderSettings />} />
       <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-6 rounded-2xl border border-white/35 bg-white/30 p-8 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-gray-950/50">
+        <UiCard
+          variant="elevated"
+          className="w-full max-w-sm space-y-6 backdrop-blur-md"
+        >
           <div className="text-center">
             <h1 className="flex items-center justify-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
               <span>{text.appName}</span>
             </h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {text.signinDescription}
+              {text.signinDescription.split("\n").map((line) => (
+                <span key={line}>
+                  {line}
+                  <br />
+                </span>
+              ))}
             </p>
           </div>
 
@@ -110,24 +112,32 @@ export function SignInPage() {
           ) : null}
 
           <div className="space-y-3">
-            <button
+            <UiButton
               type="button"
               onClick={() => void handleDevSignIn()}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-800"
+              variant="outline"
+              size="md"
+              fullWidth
+              className="gap-3 rounded-xl border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-800"
+              leftIcon={
+                <span role="img" aria-label="Gear" className="mr-0 text-m">
+                  🛠️
+                </span>
+              }
             >
-              <span role="img" aria-label="Gear" className="mr-0 text-m">
-                🛠️
-              </span>
               {text.devSignIn}
-            </button>
+            </UiButton>
 
-            <button
+            <UiButton
               type="button"
               onClick={() => void handleGoogleSignIn()}
               disabled={isSigningInWithGoogle}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
+              variant="outline"
+              size="md"
+              fullWidth
+              className="gap-3 rounded-xl border-gray-300 bg-gray-300/20 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100/50 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-800"
+              leftIcon={
+                <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -145,12 +155,14 @@ export function SignInPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
+              }
+            >
               {isSigningInWithGoogle
                 ? `${text.signInWithGoogle}...`
                 : text.signInWithGoogle}
-            </button>
+            </UiButton>
           </div>
-        </div>
+        </UiCard>
       </div>
     </main>
   );

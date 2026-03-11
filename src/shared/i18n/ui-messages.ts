@@ -66,6 +66,7 @@ type UiText = {
   loadingAbstract: string;
   loadReferenceFailed: string;
   openSource: string;
+  closeDetail: string;
   signinDescription: string;
   googleAccessDenied: string;
   googleOAuthCallbackError: string;
@@ -118,7 +119,7 @@ const en: UiText = {
   delete: "Delete",
   workflowProgress: "Workflow Progress",
   finalReport: "Final Report",
-  evidence: "Evidence",
+  evidence: "Literature Report",
   geneGraph: "Gene Graph",
   pharmaReport: "Pharma Report",
   loading: "loading",
@@ -132,7 +133,7 @@ const en: UiText = {
   stepDraftFinalReport: "Draft final report",
   stepDraftFinalReportDesc: "Summarize key findings into a coherent narrative.",
   stepDraftFinalReportLoading: "Generating report narrative from streamed insights.",
-  stepCollectEvidence: "Collect evidence",
+  stepCollectEvidence: "Collect literature",
   stepCollectEvidenceDesc: "Gather references and supporting literature.",
   stepCollectEvidenceLoading: "Loading references and ranking supporting studies.",
   stepBuildGeneGraph: "Build gene graph",
@@ -158,10 +159,11 @@ const en: UiText = {
   streaming: "Streaming…",
   waitingFinalReport: "Waiting for final report…",
   noPharmaYet: "No pharma report loaded yet.",
-  noEvidenceYet: "No evidence loaded yet.",
+  noEvidenceYet: "No literature report loaded yet.",
   loadingAbstract: "Loading abstract...",
   loadReferenceFailed: "Failed to load reference detail",
   openSource: "Open source",
+  closeDetail: "Close",
   signinDescription: "Where Lab-Proven Data Meets AI Insight:\nTarget Discovery Platform",
   googleAccessDenied:
     "This Google account is not authorized. Ask admin to register your company domain or personal email.",
@@ -217,7 +219,7 @@ const ko: UiText = {
   delete: "삭제",
   workflowProgress: "워크플로우 진행",
   finalReport: "최종 리포트",
-  evidence: "근거 문헌",
+  evidence: "Literature Report",
   geneGraph: "유전자 그래프",
   pharmaReport: "제약 리포트",
   loading: "로딩",
@@ -231,9 +233,9 @@ const ko: UiText = {
   stepDraftFinalReport: "최종 리포트 초안 작성",
   stepDraftFinalReportDesc: "핵심 결과를 일관된 내러티브로 요약합니다.",
   stepDraftFinalReportLoading: "스트리밍 인사이트를 바탕으로 리포트 내러티브를 생성 중입니다.",
-  stepCollectEvidence: "근거 수집",
-  stepCollectEvidenceDesc: "참고문헌과 근거 문헌을 수집합니다.",
-  stepCollectEvidenceLoading: "참고문헌을 불러오고 지원 근거를 순위화하는 중입니다.",
+  stepCollectEvidence: "문헌 수집",
+  stepCollectEvidenceDesc: "참고문헌과 문헌 리포트를 수집합니다.",
+  stepCollectEvidenceLoading: "참고문헌을 불러오고 문헌을 순위화하는 중입니다.",
   stepBuildGeneGraph: "유전자 그래프 구축",
   stepBuildGeneGraphDesc: "유전자, 타깃, 경로를 네트워크 형태로 연결합니다.",
   stepBuildGeneGraphLoading: "네트워크 노드와 엣지를 구성하는 중입니다.",
@@ -256,10 +258,11 @@ const ko: UiText = {
   streaming: "스트리밍 중…",
   waitingFinalReport: "최종 리포트를 기다리는 중…",
   noPharmaYet: "아직 제약 리포트가 없습니다.",
-  noEvidenceYet: "아직 근거 문헌이 없습니다.",
+  noEvidenceYet: "아직 문헌 리포트가 없습니다.",
   loadingAbstract: "초록을 불러오는 중...",
   loadReferenceFailed: "참고문헌 상세를 불러오지 못했습니다",
   openSource: "원문 열기",
+  closeDetail: "닫기",
   signinDescription: "실험실의 실증 데이터와 AI의 통찰이 만나는\n정밀 타겟 발굴 플랫폼",
   googleAccessDenied:
     "이 Google 계정은 접근 권한이 없습니다. 관리자에게 회사 도메인 또는 개인 이메일 등록을 요청하세요.",

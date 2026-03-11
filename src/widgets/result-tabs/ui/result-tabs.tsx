@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { TabKey, TabStatus } from "@contracts/types";
+import type { TabKey, TabStatus, PharmaReportItem } from "@contracts/types";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { useActiveTab } from "@/features/select-tab/model/use-active-tab";
@@ -11,6 +11,7 @@ import { useRetryWorkflowStep } from "@/features/send-query/model/use-retry-work
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { ReferenceList } from "@/entities/reference/ui/reference-list";
 import { GeneGraphView } from "@/entities/gene-graph/ui/gene-graph-view";
+import { ReportListWithDetail } from "@/shared/ui/report-list-with-detail";
 
 const formatStatus = (status: TabStatus, text: ReturnType<typeof getUiText>) => {
   if (status === "loading") {
@@ -336,6 +337,79 @@ function FinalReportCarousel({
   );
 }
 
+function PharmaDetailPanel({
+  item,
+  text,
+  onClose,
+  showCloseButton,
+  titleId,
+  refNumber
+}: {
+  item: PharmaReportItem;
+  text: ReturnType<typeof getUiText>;
+  onClose: () => void;
+  showCloseButton: boolean;
+  titleId?: string;
+  refNumber?: string;
+}) {
+  return (
+    <article className="flex flex-col rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h4 id={titleId} className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {refNumber ? (
+              <span className="mr-2 font-mono text-xs font-medium text-gray-500 dark:text-gray-400" aria-hidden>
+                {refNumber}
+              </span>
+            ) : null}
+            {item.company} · {item.target}
+          </h4>
+        </div>
+        {showCloseButton ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 select-none rounded bg-transparent px-2 py-1 text-sm font-semibold leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+            aria-label={text.closeDetail}
+          >
+            <span aria-hidden>×</span>
+          </button>
+        ) : null}
+      </div>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {item.stage} · {item.indication}
+      </p>
+      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{item.note}</p>
+    </article>
+  );
+}
+
+function PharmaListWithDetail({ items, text }: { items: PharmaReportItem[]; text: ReturnType<typeof getUiText> }) {
+  return (
+    <ReportListWithDetail<PharmaReportItem>
+      items={items}
+      getRefNumber={(i) => `[P${i + 1}]`}
+      getTitle={(p) => `${p.company} · ${p.target}`}
+      getSubtitle={(p) => `${p.stage} · ${p.indication}`}
+      getDescription={(p) => p.note}
+      getItemKey={(p, idx) => `${p.company}-${p.target}-${idx}`}
+      emptyMessage={text.noPharmaYet}
+      closeDetailLabel={text.closeDetail}
+      detailTitleId="pharma-detail-title"
+      renderDetail={(item, _index, refNumber, onClose, showCloseButton) => (
+        <PharmaDetailPanel
+          item={item}
+          text={text}
+          onClose={onClose}
+          showCloseButton={showCloseButton}
+          titleId="pharma-detail-title"
+          refNumber={refNumber}
+        />
+      )}
+    />
+  );
+}
+
 export function ResultTabs() {
   const { language } = useLanguage();
   const text = getUiText(language);
@@ -365,37 +439,50 @@ export function ResultTabs() {
     return tabOrder.map((key) => ({ key, label: labelByKey[key] }));
   }, [tabOrder, text.workflowProgress, text.finalReport, text.evidence, text.geneGraph, text.pharmaReport]);
 
-  const workflowSteps: {
-    key: Exclude<TabKey, "chat">;
-    title: string;
-    description: string;
-    inProgressDetail: string;
-  }[] = [
-    {
-      key: "answer",
-      title: text.stepDraftFinalReport,
-      description: text.stepDraftFinalReportDesc,
-      inProgressDetail: text.stepDraftFinalReportLoading
-    },
-    {
-      key: "evidence",
-      title: text.stepCollectEvidence,
-      description: text.stepCollectEvidenceDesc,
-      inProgressDetail: text.stepCollectEvidenceLoading
-    },
-    {
-      key: "graph",
-      title: text.stepBuildGeneGraph,
-      description: text.stepBuildGeneGraphDesc,
-      inProgressDetail: text.stepBuildGeneGraphLoading
-    },
-    {
-      key: "pharma",
-      title: text.stepCompilePharma,
-      description: text.stepCompilePharmaDesc,
-      inProgressDetail: text.stepCompilePharmaLoading
-    }
-  ];
+  const workflowSteps = useMemo(() => {
+    const stepByKey: Record<
+      Exclude<TabKey, "chat">,
+      { title: string; description: string; inProgressDetail: string }
+    > = {
+      answer: {
+        title: text.stepDraftFinalReport,
+        description: text.stepDraftFinalReportDesc,
+        inProgressDetail: text.stepDraftFinalReportLoading
+      },
+      evidence: {
+        title: text.stepCollectEvidence,
+        description: text.stepCollectEvidenceDesc,
+        inProgressDetail: text.stepCollectEvidenceLoading
+      },
+      graph: {
+        title: text.stepBuildGeneGraph,
+        description: text.stepBuildGeneGraphDesc,
+        inProgressDetail: text.stepBuildGeneGraphLoading
+      },
+      pharma: {
+        title: text.stepCompilePharma,
+        description: text.stepCompilePharmaDesc,
+        inProgressDetail: text.stepCompilePharmaLoading
+      }
+    };
+
+    const orderedKeys = tabOrder.filter((key): key is Exclude<TabKey, "chat"> => key !== "chat");
+    return orderedKeys.map((key) => ({ key, ...stepByKey[key] }));
+  }, [
+    tabOrder,
+    text.stepDraftFinalReport,
+    text.stepDraftFinalReportDesc,
+    text.stepDraftFinalReportLoading,
+    text.stepCollectEvidence,
+    text.stepCollectEvidenceDesc,
+    text.stepCollectEvidenceLoading,
+    text.stepBuildGeneGraph,
+    text.stepBuildGeneGraphDesc,
+    text.stepBuildGeneGraphLoading,
+    text.stepCompilePharma,
+    text.stepCompilePharmaDesc,
+    text.stepCompilePharmaLoading
+  ]);
 
   if (!session) {
     return null;
@@ -698,23 +785,7 @@ export function ResultTabs() {
           <GeneGraphView nodes={session.graphNodes} edges={session.graphEdges} />
         ) : null}
         {activeTab === "pharma" ? (
-          <div className="space-y-2">
-            {session.pharma.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{text.noPharmaYet}</p>
-            ) : (
-              session.pharma.map((item, idx) => (
-                <div key={`${item.company}-${idx}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {item.company} · {item.target}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {item.stage} · {item.indication}
-                  </p>
-                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{item.note}</p>
-                </div>
-              ))
-            )}
-          </div>
+          <PharmaListWithDetail items={session.pharma} text={text} />
         ) : null}
       </div>
     </section>

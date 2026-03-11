@@ -96,8 +96,8 @@ export async function POST(request: Request) {
           await wait(1200);
           const evidenceStepToken =
             language === "ko"
-              ? "[2/4 단계] 근거 문헌을 수집 중입니다...\n"
-              : "[Step 2/4] Collecting evidence...\n";
+              ? "[2/4 단계] 문헌을 수집 중입니다...\n"
+              : "[Step 2/4] Collecting literature...\n";
           appendAnswerToken(userId, sessionId, evidenceStepToken);
           push("answer.delta", { token: evidenceStepToken });
           await wait(700);
@@ -114,8 +114,8 @@ export async function POST(request: Request) {
             push("error", {
               message:
                 language === "ko"
-                  ? "근거 수집에 실패했습니다(mock). 실패한 단계 옆 Retry를 눌러주세요."
-                  : "Evidence collection failed (mock). Click Retry next to the failed step.",
+                  ? "문헌 수집에 실패했습니다(mock). 실패한 단계 옆 Retry를 눌러주세요."
+                  : "Literature collection failed (mock). Click Retry next to the failed step.",
               code: "MOCK_FAIL_EVIDENCE"
             });
             return;
@@ -197,16 +197,16 @@ export async function POST(request: Request) {
 
 ### Executive Summary
 - 질의와 연관된 핵심 타겟/경로를 우선 정리했습니다.
-- 근거 문헌 기반으로 신뢰도 높은 시그널을 먼저 반영했습니다.
-- 하위 단계별 산출물(Evidence, Gene Graph, Pharma Report)을 통합했습니다.
+- 문헌 기반으로 신뢰도 높은 시그널을 먼저 반영했습니다.
+- 하위 단계별 산출물(Literature Report, Gene Graph, Pharma Report)을 통합했습니다.
 
 ### Key Findings
-1. 근거 데이터에서 반복적으로 관찰되는 타겟 축이 존재합니다.
+1. 문헌 데이터에서 반복적으로 관찰되는 타겟 축이 존재합니다.
 2. 그래프 상 상호작용 강도가 높은 노드들이 우선 검토 후보입니다.
 3. 파마 파이프라인은 적응증/임상단계 관점에서 차별화 포인트가 보입니다.
 
 ### Next Actions
-- Evidence 탭에서 핵심 레퍼런스의 원문 신뢰도를 확인합니다.
+- Literature Report 탭에서 핵심 레퍼런스의 원문 신뢰도를 확인합니다.
 - Gene Graph 탭에서 중심 노드와 confidence edge를 재검증합니다.
 - Pharma Report 탭에서 경쟁사 파이프라인 및 stage 변화를 비교합니다.
 `
@@ -218,16 +218,16 @@ export async function POST(request: Request) {
 
 ### Executive summary
 - Prioritize target/pathway signals most relevant to the query.
-- Anchor conclusions to evidence-backed signals first.
-- Integrate Evidence, Gene Graph, and Pharma outputs into one report.
+- Anchor conclusions to literature-backed signals first.
+- Integrate Literature Report, Gene Graph, and Pharma outputs into one report.
 
 ### Key findings
-1. Evidence highlights recurring high-signal target axes.
+1. Literature Report highlights recurring high-signal target axes.
 2. Graph centrality surfaces candidate nodes for deeper validation.
 3. Pharma pipeline data shows indication- and stage-level differentiation.
 
 ### Next actions
-- Validate source quality and recency in the Evidence tab.
+- Validate source quality and recency in the Literature Report tab.
 - Re-check high-confidence relationships in the Gene Graph tab.
 - Compare competitor pipeline shifts in the Pharma Report tab.
 `;

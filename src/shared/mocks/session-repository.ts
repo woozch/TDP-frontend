@@ -62,7 +62,7 @@ function ensureUserSessions(userId: string): SessionDetail[] {
       messages: [
         buildMessage(
           "assistant",
-          "Sign in complete. Start a new target discovery query when ready.\n\nThis session includes sample evidence, graph, and pharma data so you can explore the UI without running a query."
+          "Sign in complete. Start a new target discovery query when ready.\n\nThis session includes sample literature, graph, and pharma data so you can explore the UI without running a query."
         )
       ],
       evidence: [...getMockEvidence("en")],

@@ -24,19 +24,12 @@ function readStoredLanguage(): Language {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
-  const [mounted, setMounted] = useState(false);
+  const [language, setLanguageState] = useState<Language>(() => readStoredLanguage());
 
   useEffect(() => {
-    setLanguageState(readStoredLanguage());
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
     document.documentElement.lang = language;
     localStorage.setItem(STORAGE_KEY, language);
-  }, [language, mounted]);
+  }, [language]);
 
   const setLanguage = useCallback((next: Language) => {
     setLanguageState(next);

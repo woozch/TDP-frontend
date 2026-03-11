@@ -17,14 +17,18 @@ export function ChatPage() {
   const { language } = useLanguage();
   const text = getUiText(language);
   const { retry } = useLoadSession(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(min-width: 768px)").matches;
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(min-width: 768px)").matches;
+  });
 
   // Default sidebar open on desktop (md+), closed on mobile
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 768px)");
-    setIsDesktop(mql.matches);
-    setSidebarOpen(mql.matches);
     const handler = () => {
       setIsDesktop(mql.matches);
     };

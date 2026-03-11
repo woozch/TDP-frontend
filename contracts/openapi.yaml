@@ -128,10 +128,10 @@ paths:
                   value: |
                     event: answer.delta
                     data: {"type":"answer.delta","seq":1,"sessionId":"session-123","timestamp":"2026-02-26T09:30:00.000Z","payload":{"token":"TP53 관련성이 매우 높습니다. "}}
-                evidence_ready:
+                literature_ready:
                   value: |
-                    event: evidence.ready
-                    data: {"type":"evidence.ready","seq":7,"sessionId":"session-123","timestamp":"2026-02-26T09:30:01.100Z","payload":{"references":[{"id":"ref-1","title":"...","source":"Nature","year":2024,"url":"https://example.org","summary":"..."}]}}
+                    event: literature.ready
+                    data: {"type":"literature.ready","seq":7,"sessionId":"session-123","timestamp":"2026-02-26T09:30:01.100Z","payload":{"references":[{"id":"ref-1","title":"...","source":"Nature","year":2024,"url":"https://example.org","summary":"..."}]}}
                 graph_ready:
                   value: |
                     event: graph.ready
@@ -150,7 +150,7 @@ paths:
                     data: {"type":"done","seq":11,"sessionId":"session-123","timestamp":"2026-02-26T09:30:04.000Z","payload":{"completedAt":"2026-02-26T09:30:04.000Z"}}
   /api/references/{id}:
     get:
-      summary: Get one evidence detail
+      summary: Get one literature detail
       parameters:
         - in: path
           name: id
@@ -198,7 +198,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-    EvidenceItem:
+    LiteratureItem:
       type: object
       required: [id, title, source, year, url, summary]
       properties:
@@ -287,16 +287,16 @@ components:
       allOf:
         - $ref: "#/components/schemas/SessionSummary"
         - type: object
-          required: [messages, evidence, graphNodes, graphEdges, pharma]
+          required: [messages, literature, graphNodes, graphEdges, pharma]
           properties:
             messages:
               type: array
               items:
                 $ref: "#/components/schemas/ChatMessage"
-            evidence:
+            literature:
               type: array
               items:
-                $ref: "#/components/schemas/EvidenceItem"
+                $ref: "#/components/schemas/LiteratureItem"
             graphNodes:
               type: array
               items:

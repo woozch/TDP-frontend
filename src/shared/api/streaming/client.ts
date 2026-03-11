@@ -11,7 +11,7 @@ interface StreamOptions {
 const decoder = new TextDecoder();
 const streamEventTypes: StreamEventType[] = [
   "answer.delta",
-  "evidence.ready",
+  "literature.ready",
   "graph.ready",
   "pharma.ready",
   "session.updated",

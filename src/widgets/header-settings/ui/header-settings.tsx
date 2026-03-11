@@ -23,22 +23,23 @@ export function HeaderSettings() {
     LANGUAGE_OPTIONS.find((item) => item.code === draftLanguage) ??
     LANGUAGE_OPTIONS[0];
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setDraftTheme(theme);
-    setDraftLanguage(isSupportedUiLanguage(language) ? language : DEFAULT_LANGUAGE);
-    setLanguageListOpen(false);
-  }, [open, theme, language]);
-
   const hasChanges = draftTheme !== theme || draftLanguage !== language;
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() =>
+          setOpen((wasOpen) => {
+            const nextOpen = !wasOpen;
+            if (nextOpen) {
+              setDraftTheme(theme);
+              setDraftLanguage(isSupportedUiLanguage(language) ? language : DEFAULT_LANGUAGE);
+              setLanguageListOpen(false);
+            }
+            return nextOpen;
+          })
+        }
         className="rounded p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
         aria-label={text.openSettings}
         aria-expanded={open}

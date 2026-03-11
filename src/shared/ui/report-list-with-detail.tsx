@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as XLSX from "xlsx";
+import { UiButton } from "@/shared/ui/button";
 
 export interface ReportListWithDetailProps<T> {
   items: T[];
@@ -12,6 +14,15 @@ export interface ReportListWithDetailProps<T> {
   emptyMessage: string;
   closeDetailLabel: string;
   detailTitleId: string;
+  /** Optional custom content rendered at the center of the bottom bar (e.g. pager). */
+  footerCenter?: React.ReactNode;
+  exportFileBaseName?: string;
+  exportColumns?: { key: string; label: string }[];
+  getExportRow?: (item: T, index: number) => Record<string, string | number | boolean | null | undefined>;
+  exportButtonLabel?: string;
+  exportCsvLabel?: string;
+  exportExcelLabel?: string;
+  exportJsonLabel?: string;
   /** Notify parent when selection changes (e.g. for loading detail by id). */
   onSelectionChange?: (index: number | null) => void;
   renderDetail: (
@@ -21,6 +32,22 @@ export interface ReportListWithDetailProps<T> {
     onClose: () => void,
     showCloseButton: boolean
   ) => React.ReactNode;
+}
+
+function downloadBlob(filename: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toCsvValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const raw = String(value);
+  const escaped = raw.replace(/"/g, "\"\"");
+  return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
 }
 
 /**
@@ -38,6 +65,14 @@ export function ReportListWithDetail<T>({
   emptyMessage,
   closeDetailLabel,
   detailTitleId,
+  footerCenter,
+  exportFileBaseName,
+  exportColumns,
+  getExportRow,
+  exportButtonLabel,
+  exportCsvLabel,
+  exportExcelLabel,
+  exportJsonLabel,
   onSelectionChange,
   renderDetail
 }: ReportListWithDetailProps<T>) {
@@ -45,6 +80,9 @@ export function ReportListWithDetail<T>({
   const selected = selectedIndex !== null ? items[selectedIndex] ?? null : null;
   const selectedRefNumber =
     selectedIndex !== null ? getRefNumber(selectedIndex) : "";
+
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement | null>(null);
 
   const onClose = () => {
     setSelectedIndex(null);
@@ -55,6 +93,18 @@ export function ReportListWithDetail<T>({
     setSelectedIndex(idx);
     onSelectionChange?.(idx);
   };
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (exportMenuRef.current?.contains(target)) return;
+      setExportOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, [exportOpen]);
 
   if (items.length === 0) {
     return (
@@ -127,9 +177,121 @@ export function ReportListWithDetail<T>({
       </div>
     ) : null;
 
+  const canExport =
+    Boolean(exportFileBaseName) &&
+    Boolean(exportColumns?.length) &&
+    typeof getExportRow === "function";
+
+  const handleExportCsv = () => {
+    if (!canExport || !exportFileBaseName || !exportColumns || !getExportRow) return;
+    const header = exportColumns.map((c) => toCsvValue(c.label)).join(",");
+    const rows = items.map((item, idx) => {
+      const row = getExportRow(item, idx);
+      return exportColumns.map((c) => toCsvValue(row[c.key])).join(",");
+    });
+    const csv = [header, ...rows].join("\n");
+    downloadBlob(`${exportFileBaseName}.csv`, new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  };
+
+  const handleExportExcel = () => {
+    if (!canExport || !exportFileBaseName || !exportColumns || !getExportRow) return;
+    const data = items.map((item, idx) => {
+      const row = getExportRow(item, idx);
+      const out: Record<string, string | number | boolean | null> = {};
+      for (const col of exportColumns) {
+        const v = row[col.key];
+        out[col.label] = v === undefined ? null : (v as any);
+      }
+      return out;
+    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+    const array = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadBlob(
+      `${exportFileBaseName}.xlsx`,
+      new Blob([array], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+    );
+  };
+
+  const handleExportJson = () => {
+    if (!canExport || !exportFileBaseName || !exportColumns || !getExportRow) return;
+    const data = items.map((item, idx) => {
+      const row = getExportRow(item, idx);
+      const out: Record<string, string | number | boolean | null> = {};
+      for (const col of exportColumns) {
+        const v = row[col.key];
+        out[col.key] = v === undefined ? null : (v as any);
+      }
+      return out;
+    });
+    const json = JSON.stringify(data, null, 2);
+    downloadBlob(`${exportFileBaseName}.json`, new Blob([json], { type: "application/json;charset=utf-8" }));
+  };
+
   return (
     <div className="relative flex h-full w-full min-h-0 flex-col">
       <div className="min-w-0 flex-1 overflow-y-auto">{listItems}</div>
+      {canExport || footerCenter ? (
+        <div className="shrink-0 border-t border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+          <div className="relative flex items-center justify-center gap-3">
+            {footerCenter ? <div className="min-w-0">{footerCenter}</div> : null}
+            {canExport ? (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 shrink-0" ref={exportMenuRef}>
+                {exportOpen ? (
+                  <div className="absolute bottom-full right-0 mb-2 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                      onClick={() => {
+                        handleExportCsv();
+                        setExportOpen(false);
+                      }}
+                    >
+                      {exportCsvLabel ?? "Export CSV"}
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                      onClick={() => {
+                        handleExportExcel();
+                        setExportOpen(false);
+                      }}
+                    >
+                      {exportExcelLabel ?? "Export Excel"}
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                      onClick={() => {
+                        handleExportJson();
+                        setExportOpen(false);
+                      }}
+                    >
+                      {exportJsonLabel ?? "Export JSON"}
+                    </button>
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setExportOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={exportOpen}
+                  aria-label={exportButtonLabel ?? "Export"}
+                  title={exportButtonLabel ?? "Export"}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <path d="M7 10l5 5 5-5" />
+                    <path d="M12 15V3" />
+                  </svg>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {detailPopup}
     </div>
   );

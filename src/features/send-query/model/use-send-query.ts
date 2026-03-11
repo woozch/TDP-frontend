@@ -11,7 +11,7 @@ export function useSendQuery() {
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const startQuery = useChatSessionStore((state) => state.startQuery);
   const appendAnswerToken = useChatSessionStore((state) => state.appendAnswerToken);
-  const setEvidence = useChatSessionStore((state) => state.setEvidence);
+  const setLiterature = useChatSessionStore((state) => state.setLiterature);
   const setGraph = useChatSessionStore((state) => state.setGraph);
   const setPharma = useChatSessionStore((state) => state.setPharma);
   const completeStream = useChatSessionStore((state) => state.completeStream);
@@ -38,8 +38,8 @@ export function useSendQuery() {
             case "answer.delta":
               appendAnswerToken(event.payload.token);
               break;
-            case "evidence.ready":
-              setEvidence(event.payload.references);
+            case "literature.ready":
+              setLiterature(event.payload.references);
               break;
             case "graph.ready":
               setGraph(event.payload.nodes, event.payload.edges);

@@ -3,9 +3,9 @@
 import { create } from "zustand";
 import type {
   ChatMessage,
-  EvidenceItem,
   GraphEdge,
   GraphNode,
+  LiteratureItem,
   PharmaReportItem,
   SessionDetail,
   SessionSummary,
@@ -20,7 +20,7 @@ export interface SessionState {
   messages: ChatMessage[];
   tabStatus: Record<TabKey, TabStatus>;
   activeTab: TabKey;
-  evidence: EvidenceItem[];
+  literature: LiteratureItem[];
   graphNodes: GraphNode[];
   graphEdges: GraphEdge[];
   pharma: PharmaReportItem[];
@@ -45,7 +45,7 @@ interface ChatSessionStore {
   clearActiveSession: () => void;
   startQuery: (query: string) => void;
   appendAnswerToken: (token: string) => void;
-  setEvidence: (references: SessionState["evidence"]) => void;
+  setLiterature: (references: SessionState["literature"]) => void;
   setGraph: (nodes: SessionState["graphNodes"], edges: SessionState["graphEdges"]) => void;
   setPharma: (items: SessionState["pharma"]) => void;
   completeStream: () => void;
@@ -61,7 +61,7 @@ interface ChatSessionStore {
 const defaultTabStatus = (): Record<TabKey, TabStatus> => ({
   chat: "complete",
   answer: "loading",
-  evidence: "loading",
+  literature: "loading",
   graph: "loading",
   pharma: "loading"
 });
@@ -71,14 +71,14 @@ const markLoadingTabsAsError = (
 ): Record<TabKey, TabStatus> => ({
   chat: tabStatus.chat,
   answer: tabStatus.answer === "loading" ? "error" : tabStatus.answer,
-  evidence: tabStatus.evidence === "loading" ? "error" : tabStatus.evidence,
+  literature: tabStatus.literature === "loading" ? "error" : tabStatus.literature,
   graph: tabStatus.graph === "loading" ? "error" : tabStatus.graph,
   pharma: tabStatus.pharma === "loading" ? "error" : tabStatus.pharma
 });
 
 const hasWorkflowStarted = (session: SessionDetail): boolean =>
   session.messages.some((message) => message.role === "user") ||
-  session.evidence.length > 0 ||
+  session.literature.length > 0 ||
   session.graphNodes.length > 0 ||
   session.graphEdges.length > 0 ||
   session.pharma.length > 0;
@@ -87,7 +87,7 @@ const buildSessionState = (session: SessionDetail): SessionState => {
   const tabStatus: Record<TabKey, TabStatus> = {
     chat: session.messages.length ? "complete" : "idle",
     answer: session.messages.length ? "complete" : "idle",
-    evidence: session.evidence.length ? "complete" : "idle",
+    literature: session.literature.length ? "complete" : "idle",
     graph: session.graphNodes.length || session.graphEdges.length ? "complete" : "idle",
     pharma: session.pharma.length ? "complete" : "idle"
   };
@@ -98,7 +98,7 @@ const buildSessionState = (session: SessionDetail): SessionState => {
     title: session.title,
     messages: session.messages,
     tabStatus,
-    evidence: session.evidence,
+    literature: session.literature,
     graphNodes: session.graphNodes,
     graphEdges: session.graphEdges,
     pharma: session.pharma,
@@ -168,7 +168,7 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
           messages: [...state.activeSession.messages, userMessage, assistantMessage],
           tabStatus: defaultTabStatus(),
           activeTab: "chat",
-          evidence: [],
+          literature: [],
           graphNodes: [],
           graphEdges: [],
           pharma: [],
@@ -204,7 +204,7 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
         }
       };
     }),
-  setEvidence: (references) =>
+  setLiterature: (references) =>
     set((state) => {
       if (!state.activeSession) {
         return state;
@@ -212,8 +212,8 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
       return {
         activeSession: {
           ...state.activeSession,
-          evidence: references,
-          tabStatus: { ...state.activeSession.tabStatus, evidence: "complete" }
+          literature: references,
+          tabStatus: { ...state.activeSession.tabStatus, literature: "complete" }
         }
       };
     }),

@@ -2,7 +2,7 @@ import type { QueryRequest, StreamEvent } from "@contracts/types";
 import { getOrCreateDevSession } from "@/auth";
 import { normalizeLanguage } from "@/shared/language/language-config";
 import {
-  applyEvidence,
+  applyLiterature,
   applyGraph,
   applyPharma,
   appendAnswerToken,
@@ -33,10 +33,10 @@ export async function POST(request: Request) {
 
   // Keep stream resilient even when session list/detail and stream requests race.
   getOrCreateSessionById(userId, body.sessionId);
-  const failureMatch = query.match(/\[fail:(answer|evidence|graph|pharma)\]/i);
+  const failureMatch = query.match(/\[fail:(answer|literature|graph|pharma)\]/i);
   const failStep = failureMatch?.[1]?.toLowerCase() as
     | "answer"
-    | "evidence"
+    | "literature"
     | "graph"
     | "pharma"
     | undefined;
@@ -94,35 +94,35 @@ export async function POST(request: Request) {
           }
 
           await wait(1200);
-          const evidenceStepToken =
+          const literatureStepToken =
             language === "ko"
               ? "[2/4 단계] 문헌을 수집 중입니다...\n"
               : "[Step 2/4] Collecting literature...\n";
-          appendAnswerToken(userId, sessionId, evidenceStepToken);
-          push("answer.delta", { token: evidenceStepToken });
+          appendAnswerToken(userId, sessionId, literatureStepToken);
+          push("answer.delta", { token: literatureStepToken });
           await wait(700);
-          const evidenceProgressToken =
+          const literatureProgressToken =
             language === "ko"
               ? "문헌을 스캔하고 핵심 참고문헌을 추출하고 있습니다...\n"
               : "Scanning literature and extracting key references...\n";
-          appendAnswerToken(userId, sessionId, evidenceProgressToken);
+          appendAnswerToken(userId, sessionId, literatureProgressToken);
           push("answer.delta", {
-            token: evidenceProgressToken
+            token: literatureProgressToken
           });
-          if (failStep === "evidence") {
+          if (failStep === "literature") {
             await wait(300);
             push("error", {
               message:
                 language === "ko"
                   ? "문헌 수집에 실패했습니다(mock). 실패한 단계 옆 Retry를 눌러주세요."
                   : "Literature collection failed (mock). Click Retry next to the failed step.",
-              code: "MOCK_FAIL_EVIDENCE"
+              code: "MOCK_FAIL_LITERATURE"
             });
             return;
           }
-          applyEvidence(userId, sessionId, language);
-          const latestEvidence = getSession(userId, sessionId)?.evidence ?? [];
-          push("evidence.ready", { references: latestEvidence });
+          applyLiterature(userId, sessionId, language);
+          const latestLiterature = getSession(userId, sessionId)?.literature ?? [];
+          push("literature.ready", { references: latestLiterature });
           await wait(1200);
           const graphStepToken =
             language === "ko"

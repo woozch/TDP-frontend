@@ -89,6 +89,11 @@ type UiText = {
   reportReadyInTab: string;
   copyReportContent: string;
   exportMarkdown: string;
+  exportGraph: string;
+  exportCsv: string;
+  exportExcel: string;
+  exportJson: string;
+  exportData: string;
   deleteReportTab: string;
   deleteReportTabConfirm: string;
   copyReportSuccess: string;
@@ -189,6 +194,11 @@ const en: UiText = {
   reportReadyInTab: "Report ready. View in Final Report tab.",
   copyReportContent: "Copy full content",
   exportMarkdown: "Export as Markdown",
+  exportGraph: "Export graph",
+  exportCsv: "Export CSV",
+  exportExcel: "Export Excel",
+  exportJson: "Export JSON",
+  exportData: "Export",
   deleteReportTab: "Delete this report",
   deleteReportTabConfirm: "Remove this report from the list?",
   copyReportSuccess: "Copied to clipboard",
@@ -219,7 +229,7 @@ const ko: UiText = {
   delete: "삭제",
   workflowProgress: "워크플로우 진행",
   finalReport: "최종 리포트",
-  evidence: "Literature Report",
+  evidence: "문헌 리포트",
   geneGraph: "유전자 그래프",
   pharmaReport: "제약 리포트",
   loading: "로딩",
@@ -288,6 +298,11 @@ const ko: UiText = {
   reportReadyInTab: "리포트가 준비되었습니다. 최종 리포트 탭에서 확인하세요.",
   copyReportContent: "내용 전체 복사",
   exportMarkdown: "Markdown으로 내보내기",
+  exportGraph: "그래프 내보내기",
+  exportCsv: "CSV로 내보내기",
+  exportExcel: "Excel로 내보내기",
+  exportJson: "JSON으로 내보내기",
+  exportData: "내보내기",
   deleteReportTab: "이 리포트 삭제",
   deleteReportTabConfirm: "이 리포트를 목록에서 제거할까요?",
   copyReportSuccess: "클립보드에 복사됨",

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDevSession } from "@/auth";
 import { normalizeLanguage } from "@/shared/language/language-config";
 import {
-  applyEvidence,
+  applyLiterature,
   applyGraph,
   applyPharma,
   appendAnswerToken,
@@ -10,7 +10,7 @@ import {
   getSession
 } from "@/shared/mocks/session-repository";
 
-type RetryStep = "answer" | "evidence" | "graph" | "pharma";
+type RetryStep = "answer" | "literature" | "graph" | "pharma";
 
 interface RetryRequest {
   sessionId?: string;
@@ -51,9 +51,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ step, token });
   }
 
-  if (step === "evidence") {
-    applyEvidence(userId, sessionId, language);
-    const references = getSession(userId, sessionId)?.evidence ?? [];
+  if (step === "literature") {
+    applyLiterature(userId, sessionId, language);
+    const references = getSession(userId, sessionId)?.literature ?? [];
     return NextResponse.json({ step, references });
   }
 

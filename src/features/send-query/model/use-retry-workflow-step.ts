@@ -1,6 +1,6 @@
 "use client";
 
-import type { EvidenceItem, GraphEdge, GraphNode, PharmaReportItem, TabKey } from "@contracts/types";
+import type { GraphEdge, GraphNode, LiteratureItem, PharmaReportItem, TabKey } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
 
@@ -8,7 +8,7 @@ type RetryStep = Exclude<TabKey, "chat">;
 
 type RetryResponse =
   | { step: "answer"; token: string }
-  | { step: "evidence"; references: EvidenceItem[] }
+  | { step: "literature"; references: LiteratureItem[] }
   | { step: "graph"; nodes: GraphNode[]; edges: GraphEdge[] }
   | { step: "pharma"; items: PharmaReportItem[] };
 
@@ -16,7 +16,7 @@ export function useRetryWorkflowStep() {
   const { language } = useLanguage();
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const appendAnswerToken = useChatSessionStore((state) => state.appendAnswerToken);
-  const setEvidence = useChatSessionStore((state) => state.setEvidence);
+  const setLiterature = useChatSessionStore((state) => state.setLiterature);
   const setGraph = useChatSessionStore((state) => state.setGraph);
   const setPharma = useChatSessionStore((state) => state.setPharma);
   const completeStream = useChatSessionStore((state) => state.completeStream);
@@ -60,8 +60,8 @@ export function useRetryWorkflowStep() {
           appendAnswerToken(payload.token);
           completeStream();
           break;
-        case "evidence":
-          setEvidence(payload.references);
+        case "literature":
+          setLiterature(payload.references);
           break;
         case "graph":
           setGraph(payload.nodes, payload.edges);

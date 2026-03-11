@@ -4,7 +4,7 @@ import type {
   SessionSummary
 } from "@contracts/types";
 import {
-  getMockEvidence,
+  getMockLiterature,
   getMockPharmaReport,
   mockGraphEdges,
   mockGraphNodes,
@@ -29,11 +29,16 @@ const ensureSessionLanguage = (session: SessionDetail): SessionDetail => {
   return session;
 };
 
-const buildMessage = (role: ChatMessage["role"], content: string): ChatMessage => ({
+const buildMessage = (
+  role: ChatMessage["role"],
+  content: string,
+  extra?: Partial<Omit<ChatMessage, "id" | "role" | "content" | "createdAt">>
+): ChatMessage => ({
   id: `${role}-${crypto.randomUUID()}`,
   role,
   content,
-  createdAt: nowIso()
+  createdAt: nowIso(),
+  ...(extra ?? {})
 });
 
 const toSummary = (session: SessionDetail): SessionSummary => ({
@@ -62,10 +67,65 @@ function ensureUserSessions(userId: string): SessionDetail[] {
       messages: [
         buildMessage(
           "assistant",
-          "Sign in complete. Start a new target discovery query when ready.\n\nThis session includes sample literature, graph, and pharma data so you can explore the UI without running a query."
+          "Sign in complete. Start a new target discovery query when ready.\n\nThis session includes sample literature, graph, and pharma data so you can explore the UI without running a query.",
+          { isClarifyingQuestion: true }
+        ),
+        buildMessage("user", "Draft final report (example) for KRAS resistance mechanisms."),
+        buildMessage(
+          "assistant",
+          [
+            "## Final report",
+            "",
+            "### Executive summary",
+            "- Resistance patterns cluster around MAPK reactivation and RTK bypass. [L1]",
+            "- Prioritize combination hypotheses with tractable co-targets and clean source quality. [L3]",
+            "",
+            "### Key findings",
+            "1. Cross-study recurrence supports MAPK co-inhibition. [L1]",
+            "2. ctDNA monitoring can anticipate relapse and guide adaptive dosing. [L2]",
+            "3. Competitive pressure is rising in KRAS combo programs; track stage shifts across sponsors. [D1-2]",
+            "",
+            "### Recommended next actions",
+            "- Validate top literature signals and source quality. [L1] [L2] [L3]",
+            "- Compare pharma stage shifts for KRAS and key bypass targets. [D1-2]",
+          ].join("\n"),
+          {
+            literatureRefIds: ["ref-5", "ref-10", "ref-1"],
+            pharmaRefIndices: [3, 4, 1, 2, 5],
+            graphRefNodeIds: ["KRAS", "STK33", "DDR", "DrugX", "PIK3CA", "MET", "MAPK", "DrugY", "TP53", "MDM2"],
+            graphRefEdgeIndices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            citationMap: {}
+          }
+        ),
+        buildMessage("user", "Draft an immune-evasion focused report (example)."),
+        buildMessage(
+          "assistant",
+          [
+            "## Final report",
+            "",
+            "### Executive summary",
+            "- Tumor immune escape converges on antigen presentation loss and IFN-state transitions. [L1]",
+            "- Consider checkpoint combinations where niche programs dominate. [L2]",
+            "",
+            "### Key findings",
+            "1. Single-cell programs recur across lineages with context-specific regulators. [L1]",
+            "2. Knowledge graph signals help prioritize immune escape regulators with genetic support. [L2]",
+            "3. Competitive landscape is crowded; differentiation may come from biomarker stratification. [D1-3]",
+            "",
+            "### Next actions",
+            "- Review highlighted literature and extract actionable biomarkers. [L1] [L2]",
+            "- Benchmark competitor programs for LAG-3/TIGIT combinations. [D1-3]",
+          ].join("\n"),
+          {
+            literatureRefIds: ["ref-4", "ref-7"],
+            pharmaRefIndices: [9, 7, 8],
+            graphRefNodeIds: ["B2M", "HLA_A", "IFNG", "JAK1", "AP", "IFN", "TIGIT", "DrugZ"],
+            graphRefEdgeIndices: [11, 12, 13, 14, 15, 16],
+            citationMap: {}
+          }
         )
       ],
-      evidence: [...getMockEvidence("en")],
+      literature: [...getMockLiterature("en")],
       graphNodes: [...mockGraphNodes],
       graphEdges: [...mockGraphEdges],
       pharma: [...getMockPharmaReport("en")]
@@ -110,7 +170,7 @@ export function getOrCreateSessionById(userId: string, sessionId: string): Sessi
     createdAt: now,
     updatedAt: now,
     messages: [],
-    evidence: [],
+    literature: [],
     graphNodes: [],
     graphEdges: [],
     pharma: []
@@ -130,7 +190,7 @@ export function createSession(userId: string, title?: string, language: Language
     createdAt,
     updatedAt: createdAt,
     messages: [],
-    evidence: [],
+    literature: [],
     graphNodes: [],
     graphEdges: [],
     pharma: []
@@ -166,7 +226,7 @@ export function beginStreamQuery(
   session.messages.push(buildMessage("user", query));
   session.messages.push(buildMessage("assistant", ""));
   session.language = language;
-  session.evidence = [];
+  session.literature = [];
   session.graphNodes = [];
   session.graphEdges = [];
   session.pharma = [];
@@ -214,12 +274,12 @@ export function buildRecommendedSessionTitle(query: string, language: Language):
   return `${shortened}\u2026`;
 }
 
-export function applyEvidence(userId: string, sessionId: string, language: Language = "en"): void {
+export function applyLiterature(userId: string, sessionId: string, language: Language = "en"): void {
   const session = getSession(userId, sessionId);
   if (!session) {
     return;
   }
-  session.evidence = getMockEvidence(language);
+  session.literature = getMockLiterature(language);
   session.updatedAt = nowIso();
 }
 

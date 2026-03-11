@@ -1,4 +1,4 @@
-export type TabKey = "chat" | "answer" | "evidence" | "graph" | "pharma";
+export type TabKey = "chat" | "answer" | "literature" | "graph" | "pharma";
 export type TabStatus = "idle" | "loading" | "complete" | "error";
 export type ChatRole = "user" | "assistant";
 
@@ -31,9 +31,25 @@ export interface ChatMessage {
   createdAt: string;
   /** When true, the assistant is asking a follow-up question (e.g. query ambiguous). Reply in the input to refine the report. */
   isClarifyingQuestion?: boolean;
+  /**
+   * Per-report reference sets.
+   * These are used to dynamically filter the Literature/Pharma tabs based on the active report.
+   */
+  literatureRefIds?: string[];
+  /** 1-based indices into SessionDetail.pharma (can differ per report). */
+  pharmaRefIndices?: number[];
+  /** Node ids into SessionDetail.graphNodes (can differ per report). */
+  graphRefNodeIds?: string[];
+  /** 1-based indices into SessionDetail.graphEdges (can differ per report). */
+  graphRefEdgeIndices?: number[];
+  /**
+   * Optional map to convert inline numeric citations like [1] into tab citations like [L5] or [P3-4].
+   * Example: { "1": "L1", "2": "L5", "3": "P3-4" }.
+   */
+  citationMap?: Record<string, string>;
 }
 
-export interface EvidenceItem {
+export interface LiteratureItem {
   id: string;
   title: string;
   source: string;
@@ -73,7 +89,7 @@ export interface ReferenceDetail {
 
 export interface SessionDetail extends SessionSummary {
   messages: ChatMessage[];
-  evidence: EvidenceItem[];
+  literature: LiteratureItem[];
   graphNodes: GraphNode[];
   graphEdges: GraphEdge[];
   pharma: PharmaReportItem[];
@@ -90,7 +106,7 @@ export interface CreateSessionResponse {
 
 export type StreamEventType =
   | "answer.delta"
-  | "evidence.ready"
+  | "literature.ready"
   | "graph.ready"
   | "pharma.ready"
   | "session.updated"
@@ -107,7 +123,7 @@ interface StreamEnvelope<TType extends StreamEventType, TPayload> {
 
 export type StreamEvent =
   | StreamEnvelope<"answer.delta", { token: string }>
-  | StreamEnvelope<"evidence.ready", { references: EvidenceItem[] }>
+  | StreamEnvelope<"literature.ready", { references: LiteratureItem[] }>
   | StreamEnvelope<"graph.ready", { nodes: GraphNode[]; edges: GraphEdge[] }>
   | StreamEnvelope<"pharma.ready", { items: PharmaReportItem[] }>
   | StreamEnvelope<"session.updated", { title: string; updatedAt: string }>

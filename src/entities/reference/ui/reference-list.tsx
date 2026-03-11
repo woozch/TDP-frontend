@@ -1,16 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { EvidenceItem, ReferenceDetail } from "@contracts/types";
+import type { LiteratureItem, ReferenceDetail } from "@contracts/types";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { ReportListWithDetail } from "@/shared/ui/report-list-with-detail";
 
 interface Props {
-  references: EvidenceItem[];
+  references: LiteratureItem[];
+  footerCenter?: React.ReactNode;
 }
 
-function EvidenceDetailPanel({
+function LiteratureDetailPanel({
   selected,
   detail,
   isLoading,
@@ -21,7 +22,7 @@ function EvidenceDetailPanel({
   titleId,
   refNumber
 }: {
-  selected: EvidenceItem;
+  selected: LiteratureItem;
   detail: ReferenceDetail | null;
   isLoading: boolean;
   error: string | null;
@@ -87,7 +88,7 @@ function EvidenceDetailPanel({
   );
 }
 
-export function ReferenceList({ references }: Props) {
+export function ReferenceList({ references, footerCenter }: Props) {
   const { language } = useLanguage();
   const text = getUiText(language);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -145,19 +146,41 @@ export function ReferenceList({ references }: Props) {
   }, [language, selected?.id, text.loadReferenceFailed]);
 
   return (
-    <ReportListWithDetail<EvidenceItem>
+    <ReportListWithDetail<LiteratureItem>
       items={references}
-      getRefNumber={(i) => `[E${i + 1}]`}
+      getRefNumber={(i) => `[L${i + 1}]`}
       getTitle={(r) => r.title}
       getSubtitle={(r) => `${r.source} · ${r.year}`}
       getDescription={(r) => r.summary}
       getItemKey={(r) => r.id}
       emptyMessage={text.noEvidenceYet}
       closeDetailLabel={text.closeDetail}
-      detailTitleId="evidence-detail-title"
+      detailTitleId="literature-detail-title"
+      footerCenter={footerCenter}
+      exportFileBaseName="literature-report"
+      exportColumns={[
+        { key: "ref", label: "Ref" },
+        { key: "title", label: "Title" },
+        { key: "source", label: "Source" },
+        { key: "year", label: "Year" },
+        { key: "summary", label: "Summary" },
+        { key: "url", label: "URL" }
+      ]}
+      getExportRow={(r, i) => ({
+        ref: `L${i + 1}`,
+        title: r.title,
+        source: r.source,
+        year: r.year,
+        summary: r.summary,
+        url: r.url
+      })}
+      exportButtonLabel={text.exportData}
+      exportCsvLabel={text.exportCsv}
+      exportExcelLabel={text.exportExcel}
+      exportJsonLabel={text.exportJson}
       onSelectionChange={onSelectionChange}
       renderDetail={(item, _index, refNumber, onClose, showCloseButton) => (
-        <EvidenceDetailPanel
+        <LiteratureDetailPanel
           selected={item}
           detail={detail}
           isLoading={isLoading}
@@ -165,7 +188,7 @@ export function ReferenceList({ references }: Props) {
           text={text}
           onClose={onClose}
           showCloseButton={showCloseButton}
-          titleId="evidence-detail-title"
+          titleId="literature-detail-title"
           refNumber={refNumber}
         />
       )}

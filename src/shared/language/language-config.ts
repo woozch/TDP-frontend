@@ -1,5 +1,8 @@
 export const DEFAULT_LANGUAGE = "en" as const;
 
+/** Languages that have full UI translations; others are shown but not selectable. */
+export const SUPPORTED_UI_LANGUAGES: readonly string[] = ["en", "ko"];
+
 export const LANGUAGE_OPTIONS = [
   { code: "en", label: "English", flag: "🇺🇸" },
   { code: "ko", label: "Korean", flag: "🇰🇷" },
@@ -9,6 +12,10 @@ export const LANGUAGE_OPTIONS = [
 ] as const;
 
 export type Language = (typeof LANGUAGE_OPTIONS)[number]["code"];
+
+export function isSupportedUiLanguage(code: string): boolean {
+  return SUPPORTED_UI_LANGUAGES.includes(code);
+}
 
 const languageCodeSet = new Set<string>(LANGUAGE_OPTIONS.map((item) => item.code));
 

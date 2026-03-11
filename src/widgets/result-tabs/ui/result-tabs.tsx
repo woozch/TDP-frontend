@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { TabKey, TabStatus } from "@contracts/types";
@@ -26,6 +26,33 @@ const formatStatus = (status: TabStatus, text: ReturnType<typeof getUiText>) => 
 };
 
 const TAB_INDICATOR_SIZE = 14;
+
+const RESULT_TAB_ORDER_KEY = "tdp-result-tab-order";
+const DEFAULT_TAB_ORDER: TabKey[] = ["chat", "answer", "evidence", "graph", "pharma"];
+
+function getStoredTabOrder(): TabKey[] {
+  if (typeof window === "undefined") return [...DEFAULT_TAB_ORDER];
+  try {
+    const raw = window.localStorage.getItem(RESULT_TAB_ORDER_KEY);
+    if (!raw) return [...DEFAULT_TAB_ORDER];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [...DEFAULT_TAB_ORDER];
+    const set = new Set(DEFAULT_TAB_ORDER);
+    const ordered = (parsed as string[]).filter((k): k is TabKey => set.has(k as TabKey));
+    if (ordered.length !== set.size) return [...DEFAULT_TAB_ORDER];
+    return ordered;
+  } catch {
+    return [...DEFAULT_TAB_ORDER];
+  }
+}
+
+function saveTabOrder(order: TabKey[]) {
+  try {
+    window.localStorage.setItem(RESULT_TAB_ORDER_KEY, JSON.stringify(order));
+  } catch {
+    // ignore
+  }
+}
 
 function TabStatusIndicator({ status }: { status: TabStatus }) {
   const size = TAB_INDICATOR_SIZE;
@@ -316,6 +343,9 @@ export function ResultTabs() {
   const session = useChatSessionStore((state) => state.activeSession);
   const { retryStep } = useRetryWorkflowStep();
 
+  const [tabOrder, setTabOrder] = useState<TabKey[]>(getStoredTabOrder);
+  const [draggedTabKey, setDraggedTabKey] = useState<TabKey | null>(null);
+
   const tabs: { key: TabKey; label: string }[] = [
     { key: "chat", label: text.workflowProgress },
     { key: "answer", label: text.finalReport },
@@ -323,6 +353,17 @@ export function ResultTabs() {
     { key: "graph", label: text.geneGraph },
     { key: "pharma", label: text.pharmaReport }
   ];
+
+  const orderedTabs = useMemo(() => {
+    const labelByKey: Record<TabKey, string> = {
+      chat: text.workflowProgress,
+      answer: text.finalReport,
+      evidence: text.evidence,
+      graph: text.geneGraph,
+      pharma: text.pharmaReport
+    };
+    return tabOrder.map((key) => ({ key, label: labelByKey[key] }));
+  }, [tabOrder, text.workflowProgress, text.finalReport, text.evidence, text.geneGraph, text.pharmaReport]);
 
   const workflowSteps: {
     key: Exclude<TabKey, "chat">;
@@ -361,8 +402,8 @@ export function ResultTabs() {
   }
 
   const visibleTabs = session.workflowStarted
-    ? tabs
-    : tabs.filter((tab) => tab.key === "chat");
+    ? orderedTabs
+    : orderedTabs.filter((tab) => tab.key === "chat");
   const totalWorkflowSteps = workflowSteps.length;
   const completedCount = workflowSteps.filter(
     (step) => session.tabStatus[step.key] === "complete"
@@ -382,24 +423,83 @@ export function ResultTabs() {
     }
   }, [activeTab, session.workflowStarted, setActiveTab]);
 
+  const handleDragStart = useCallback((e: React.DragEvent, key: TabKey) => {
+    setDraggedTabKey(key);
+    e.dataTransfer.setData("text/plain", key);
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedTabKey(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent, dropTargetKey: TabKey) => {
+      e.preventDefault();
+      const key = draggedTabKey;
+      setDraggedTabKey(null);
+      if (!key || key === dropTargetKey) return;
+      const fromIdx = tabOrder.indexOf(key);
+      const toIdx = tabOrder.indexOf(dropTargetKey);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const next = tabOrder.slice();
+      next.splice(fromIdx, 1);
+      const newToIdx = next.indexOf(dropTargetKey);
+      next.splice(newToIdx, 0, key);
+      setTabOrder(next);
+      saveTabOrder(next);
+    },
+    [draggedTabKey, tabOrder]
+  );
+
   return (
     <section className="flex h-full flex-col overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="sticky top-0 z-10 isolate mb-0 flex flex-col border-b border-gray-200 bg-white px-4 pb-2 pt-4 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => {
             const status = session.tabStatus[tab.key];
+            const isDragging = draggedTabKey === tab.key;
             return (
               <button
                 key={tab.key}
                 type="button"
+                draggable={session.workflowStarted && visibleTabs.length > 1}
+                onDragStart={(e) => handleDragStart(e, tab.key)}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, tab.key)}
                 onClick={() => setActiveTab(tab.key)}
                 className={`rounded-lg border px-3 py-1.5 text-xs transition ${
+                  isDragging ? "opacity-50" : ""
+                } ${
                   activeTab === tab.key
                     ? "border-brand bg-brand/15 text-brand-ink dark:bg-brand/20 dark:text-brand"
                     : "border-gray-300 bg-gray-50 text-gray-600 hover:border-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
-                }`}
+                } ${session.workflowStarted && visibleTabs.length > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
+                aria-label={session.workflowStarted && visibleTabs.length > 1 ? `${tab.label}, ${text.reorderTabHint}` : tab.label}
               >
                 <span className="inline-flex items-center gap-1.5">
+                  {session.workflowStarted && visibleTabs.length > 1 ? (
+                    <span
+                      className="shrink-0 text-gray-400 dark:text-gray-500"
+                      aria-hidden
+                      title={text.reorderTabHint}
+                    >
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <circle cx="9" cy="6" r="1.5" />
+                        <circle cx="15" cy="6" r="1.5" />
+                        <circle cx="9" cy="12" r="1.5" />
+                        <circle cx="15" cy="12" r="1.5" />
+                        <circle cx="9" cy="18" r="1.5" />
+                        <circle cx="15" cy="18" r="1.5" />
+                      </svg>
+                    </span>
+                  ) : null}
                   <span>{tab.label}</span>
                   <TabStatusIndicator status={status} />
                   <span className="sr-only">· {formatStatus(status, text)}</span>

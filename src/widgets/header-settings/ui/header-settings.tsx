@@ -5,7 +5,7 @@ import {
   LANGUAGE_OPTIONS,
   useLanguage,
 } from "@/shared/language/language-context";
-import { type Language } from "@/shared/language/language-config";
+import { type Language, isSupportedUiLanguage, DEFAULT_LANGUAGE } from "@/shared/language/language-config";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { Theme, useTheme } from "@/shared/theme/theme-context";
 import { UiButton } from "@/shared/ui/button";
@@ -28,7 +28,7 @@ export function HeaderSettings() {
       return;
     }
     setDraftTheme(theme);
-    setDraftLanguage(language);
+    setDraftLanguage(isSupportedUiLanguage(language) ? language : DEFAULT_LANGUAGE);
     setLanguageListOpen(false);
   }, [open, theme, language]);
 
@@ -137,27 +137,36 @@ export function HeaderSettings() {
                     aria-label="Language options"
                     className="absolute left-0 right-0 z-30 mt-1 max-h-44 overflow-y-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-600 dark:bg-gray-900"
                   >
-                    {LANGUAGE_OPTIONS.map((item) => (
-                      <li key={item.code}>
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={draftLanguage === item.code}
-                          onClick={() => {
-                            setDraftLanguage(item.code);
-                            setLanguageListOpen(false);
-                          }}
-                          className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
-                            draftLanguage === item.code
-                              ? "bg-brand/15 text-brand-ink dark:bg-brand/20 dark:text-brand"
-                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          <span aria-hidden>{item.flag}</span>
-                          <span>{item.label}</span>
-                        </button>
-                      </li>
-                    ))}
+                    {LANGUAGE_OPTIONS.map((item) => {
+                      const supported = isSupportedUiLanguage(item.code);
+                      return (
+                        <li key={item.code}>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={draftLanguage === item.code}
+                            aria-disabled={!supported}
+                            disabled={!supported}
+                            onClick={() => {
+                              if (!supported) return;
+                              setDraftLanguage(item.code);
+                              setLanguageListOpen(false);
+                            }}
+                            className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
+                              supported
+                                ? draftLanguage === item.code
+                                  ? "bg-brand/15 text-brand-ink dark:bg-brand/20 dark:text-brand"
+                                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                : "cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-500"
+                            }`}
+                            title={supported ? undefined : "Coming soon"}
+                          >
+                            <span aria-hidden>{item.flag}</span>
+                            <span>{item.label}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : null}
               </div>
@@ -180,7 +189,8 @@ export function HeaderSettings() {
                 type="button"
                 onClick={() => {
                   setTheme(draftTheme);
-                  setLanguage(draftLanguage);
+                  const langToApply = isSupportedUiLanguage(draftLanguage) ? draftLanguage : DEFAULT_LANGUAGE;
+                  setLanguage(langToApply);
                   setLanguageListOpen(false);
                   setOpen(false);
                 }}

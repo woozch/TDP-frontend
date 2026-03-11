@@ -91,6 +91,7 @@ type UiText = {
   deleteReportTab: string;
   deleteReportTabConfirm: string;
   copyReportSuccess: string;
+  reorderTabHint: string;
 };
 
 const en: UiText = {
@@ -189,6 +190,7 @@ const en: UiText = {
   deleteReportTab: "Delete this report",
   deleteReportTabConfirm: "Remove this report from the list?",
   copyReportSuccess: "Copied to clipboard",
+  reorderTabHint: "Drag to reorder tabs",
 };
 
 const ko: UiText = {
@@ -286,6 +288,7 @@ const ko: UiText = {
   deleteReportTab: "이 리포트 삭제",
   deleteReportTabConfirm: "이 리포트를 목록에서 제거할까요?",
   copyReportSuccess: "클립보드에 복사됨",
+  reorderTabHint: "드래그하여 탭 순서 변경",
 };
 
 export function getUiText(language: Language): UiText {

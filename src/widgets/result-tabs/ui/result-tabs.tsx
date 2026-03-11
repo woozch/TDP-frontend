@@ -661,28 +661,19 @@ function CenterReportPager({
   const canNext = clampedIndex < total - 1;
 
   return (
-    <nav
-      className="flex items-center justify-center gap-2"
-      aria-label="Report navigation"
-    >
+    <nav className="flex items-center gap-2" aria-label="Report navigation">
       <button
         type="button"
         onClick={() => onChangeIndex(Math.max(0, clampedIndex - 1))}
         disabled={!canPrev}
         aria-label={text.reportNavPrev}
         title={text.reportNavPrev}
-        className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+        className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
       >
         <span aria-hidden>&lt;</span>
       </button>
-      <span className="text-gray-400 dark:text-gray-500" aria-hidden>
-        |
-      </span>
       <span className="min-w-16 text-center text-[11px] font-medium text-gray-600 dark:text-gray-400">
         {text.reportPageOf(clampedIndex + 1, total)}
-      </span>
-      <span className="text-gray-400 dark:text-gray-500" aria-hidden>
-        |
       </span>
       <button
         type="button"
@@ -690,7 +681,7 @@ function CenterReportPager({
         disabled={!canNext}
         aria-label={text.reportNavNext}
         title={text.reportNavNext}
-        className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+        className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
       >
         <span aria-hidden>&gt;</span>
       </button>
@@ -704,12 +695,14 @@ function IconButton({
   title,
   ariaLabel,
   children,
+  className,
 }: {
   onClick: () => void;
   disabled?: boolean;
   title: string;
   ariaLabel: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
@@ -718,7 +711,10 @@ function IconButton({
       disabled={disabled}
       title={title}
       aria-label={ariaLabel}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+      className={
+        className ??
+        "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-transparent text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+      }
     >
       {children}
     </button>
@@ -752,13 +748,9 @@ function ResultTabFooter({
   if (!center && !right) return null;
   return (
     <div className="shrink-0 touch-pan-y border-t border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800">
-      <div className="relative flex items-center justify-center">
-        {center ? <div className="min-w-0 px-3 py-2">{center}</div> : null}
-        {right ? (
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-2">
-            {right}
-          </div>
-        ) : null}
+      <div className="flex items-center gap-3 px-3 py-2">
+        {center ? <div className="min-w-0">{center}</div> : null}
+        {right ? <div className="ml-auto shrink-0">{right}</div> : null}
       </div>
     </div>
   );
@@ -798,6 +790,9 @@ export function ResultTabs() {
   const text = getUiText(language);
   const { activeTab, setActiveTab } = useActiveTab();
   const session = useChatSessionStore((state) => state.activeSession);
+  const removeMessageFromActiveSession = useChatSessionStore(
+    (state) => state.removeMessageFromActiveSession,
+  );
   const { retryStep } = useRetryWorkflowStep();
 
   const reportMessages = useMemo(
@@ -811,6 +806,10 @@ export function ResultTabs() {
   const [activeReportIndex, setActiveReportIndex] = useState(() =>
     Math.max(0, reportMessages.length - 1),
   );
+
+  const reportIndexByMessageId = useMemo(() => {
+    return new Map(reportMessages.map((m, idx) => [m.id, idx]));
+  }, [reportMessages]);
 
   const clampedActiveReportIndex = Math.min(
     Math.max(0, activeReportIndex),
@@ -901,6 +900,7 @@ export function ResultTabs() {
   ]);
 
   const activeReport = reportMessages[clampedActiveReportIndex];
+  const activeReportContent = (activeReport?.content ?? "").trim();
 
   const activeLiterature: LiteratureItem[] = useMemo(() => {
     const ids = activeReport?.literatureRefIds;
@@ -963,16 +963,99 @@ export function ResultTabs() {
   const visibleTabs = session?.workflowStarted
     ? orderedTabs
     : orderedTabs.filter((tab) => tab.key === "chat");
+  const effectiveTabStatus: Record<TabKey, TabStatus> = useMemo(() => {
+    if (!session) {
+      return {
+        chat: "idle",
+        answer: "idle",
+        literature: "idle",
+        graph: "idle",
+        pharma: "idle",
+      };
+    }
+    const isLatestReportActive =
+      totalReports === 0 || clampedActiveReportIndex === totalReports - 1;
+    if (isLatestReportActive) {
+      return session.tabStatus;
+    }
+    // For historical reports, show all steps as completed so workflow
+    // status reflects the selected report instead of the latest run.
+    return {
+      chat: "complete",
+      answer: "complete",
+      literature: "complete",
+      graph: "complete",
+      pharma: "complete",
+    };
+  }, [session, clampedActiveReportIndex, totalReports]);
+
   const totalWorkflowSteps = workflowSteps.length;
   const completedCount = workflowSteps.filter(
-    (step) => session?.tabStatus?.[step.key] === "complete",
+    (step) => effectiveTabStatus[step.key] === "complete",
   ).length;
   const loadingIndex = workflowSteps.findIndex(
-    (step) => session?.tabStatus?.[step.key] === "loading",
+    (step) => effectiveTabStatus[step.key] === "loading",
   );
   const hasError = workflowSteps.some(
-    (step) => session?.tabStatus?.[step.key] === "error",
+    (step) => effectiveTabStatus[step.key] === "error",
   );
+
+  const handleDeleteActiveReport = useCallback(() => {
+    if (!activeReport) return;
+    if (!window.confirm(text.deleteReportTabConfirm)) return;
+    removeMessageFromActiveSession(activeReport.id);
+    setActiveReportIndex((current) =>
+      Math.max(0, Math.min(current, reportMessages.length - 2)),
+    );
+  }, [
+    activeReport,
+    removeMessageFromActiveSession,
+    reportMessages.length,
+    text.deleteReportTabConfirm,
+  ]);
+
+  const handleCopyActiveReport = useCallback(async () => {
+    if (!activeReportContent) return;
+    try {
+      await navigator.clipboard.writeText(activeReportContent);
+    } catch {
+      // ignore
+    }
+  }, [activeReportContent]);
+
+  const handleExportActiveLiterature = useCallback(() => {
+    if (!activeLiterature.length) return;
+    const payload = JSON.stringify(activeLiterature, null, 2);
+    downloadTextFile(
+      "literature-report.json",
+      payload,
+      "application/json;charset=utf-8",
+    );
+  }, [activeLiterature]);
+
+  const handleExportActivePharma = useCallback(() => {
+    if (!activePharma.length) return;
+    const payload = JSON.stringify(activePharma, null, 2);
+    downloadTextFile(
+      "pharma-report.json",
+      payload,
+      "application/json;charset=utf-8",
+    );
+  }, [activePharma]);
+
+  const handleExportActiveGraph = useCallback(() => {
+    if (!activeGraph.nodes.length && !activeGraph.edges.length) return;
+    const payload = JSON.stringify(
+      { nodes: activeGraph.nodes, edges: activeGraph.edges },
+      null,
+      2,
+    );
+    downloadTextFile(
+      "gene-graph.json",
+      payload,
+      "application/json;charset=utf-8",
+    );
+  }, [activeGraph]);
   const progressUnits =
     completedCount +
     (loadingIndex >= 0 && completedCount < totalWorkflowSteps ? 0.5 : 0);
@@ -1031,7 +1114,7 @@ export function ResultTabs() {
       <div className="sticky top-0 z-10 isolate mb-0 flex flex-col border-b border-gray-200 bg-white px-4 pb-2 pt-4 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => {
-            const status = session.tabStatus[tab.key];
+            const status = effectiveTabStatus[tab.key];
             const isDragging = draggedTabKey === tab.key;
             return (
               <button
@@ -1113,7 +1196,7 @@ export function ResultTabs() {
                       disabled={!canPrevReport}
                       aria-label={text.reportNavPrev}
                       title={text.reportNavPrev}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
                     >
                       <span aria-hidden>&lt;</span>
                     </button>
@@ -1132,7 +1215,7 @@ export function ResultTabs() {
                       disabled={!canNextReport}
                       aria-label={text.reportNavNext}
                       title={text.reportNavNext}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
                     >
                       <span aria-hidden>&gt;</span>
                     </button>
@@ -1159,7 +1242,7 @@ export function ResultTabs() {
                 </div>
                 <ul className="mt-2 space-y-2">
                   {workflowSteps.map((step) => {
-                    const status = session.tabStatus[step.key];
+                    const status = effectiveTabStatus[step.key];
                     const isLoading = status === "loading";
                     const isComplete = status === "complete";
                     const isError = status === "error";
@@ -1273,6 +1356,9 @@ export function ResultTabs() {
                   const isLastMessage = index === session.messages.length - 1;
                   const isStreamingReport =
                     isReport && isLastMessage && session.isStreaming;
+                  const reportIndex = isReport
+                    ? reportIndexByMessageId.get(message.id)
+                    : undefined;
                   const label = isUser
                     ? text.yourQuery
                     : isClarifying
@@ -1301,9 +1387,39 @@ export function ResultTabs() {
                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         {label}
                       </p>
-                      <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-                        {chatContent}
-                      </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                          {chatContent}
+                        </p>
+                        {!isUser &&
+                        !isClarifying &&
+                        !isStreamingReport &&
+                        typeof reportIndex === "number" ? (
+                          <IconButton
+                            onClick={() => {
+                              setActiveReportIndex(reportIndex);
+                              setActiveTab("answer");
+                            }}
+                            title={text.openFinalReport}
+                            ariaLabel={text.openFinalReport}
+                            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-brand/0 text-brand transition hover:bg-brand/15 disabled:pointer-events-none disabled:opacity-40 dark:bg-brand/15 dark:text-brand dark:hover:bg-brand/20"
+                          >
+                            <svg
+                              className="h-3.5 w-3.5"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden
+                            >
+                              <path d="M7 17L17 7" />
+                              <path d="M7 7h10v10" />
+                            </svg>
+                          </IconButton>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })
@@ -1322,16 +1438,72 @@ export function ResultTabs() {
         ) : null}
         {activeTab === "literature" ? (
           <ResultTabLayout
-            body={
-              <ReferenceList
-                references={activeLiterature}
-                footerCenter={
+            body={<ReferenceList references={activeLiterature} />}
+            footer={
+              <ResultTabFooter
+                center={
                   <CenterReportPager
                     text={text}
                     currentIndex={clampedActiveReportIndex}
                     total={reportMessages.length}
                     onChangeIndex={setActiveReportIndex}
                   />
+                }
+                right={
+                  reportMessages.length > 0 ? (
+                    <div className="inline-flex items-center gap-2">
+                      <IconButton
+                        onClick={handleDeleteActiveReport}
+                        title={text.deleteReportTab}
+                        ariaLabel={text.deleteReportTab}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+                          <path d="M10 11v6M14 11v6" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleCopyActiveReport}
+                        disabled={!activeReportContent}
+                        title={text.copyReportContent}
+                        ariaLabel={text.copyReportContent}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <rect
+                            x="9"
+                            y="9"
+                            width="13"
+                            height="13"
+                            rx="2"
+                            ry="2"
+                          />
+                          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleExportActiveLiterature}
+                        disabled={!activeLiterature.length}
+                        title={text.exportJson}
+                        ariaLabel={text.exportJson}
+                      >
+                        <DownloadIcon />
+                      </IconButton>
+                    </div>
+                  ) : null
                 }
               />
             }
@@ -1358,24 +1530,62 @@ export function ResultTabs() {
                   />
                 }
                 right={
-                  <IconButton
-                    onClick={() => {
-                      const payload = JSON.stringify(
-                        { nodes: activeGraph.nodes, edges: activeGraph.edges },
-                        null,
-                        2,
-                      );
-                      downloadTextFile(
-                        "gene-graph.json",
-                        payload,
-                        "application/json;charset=utf-8",
-                      );
-                    }}
-                    title={text.exportGraph}
-                    ariaLabel={text.exportGraph}
-                  >
-                    <DownloadIcon />
-                  </IconButton>
+                  reportMessages.length > 0 ? (
+                    <div className="inline-flex items-center gap-2">
+                      <IconButton
+                        onClick={handleDeleteActiveReport}
+                        title={text.deleteReportTab}
+                        ariaLabel={text.deleteReportTab}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+                          <path d="M10 11v6M14 11v6" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleCopyActiveReport}
+                        disabled={!activeReportContent}
+                        title={text.copyReportContent}
+                        ariaLabel={text.copyReportContent}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <rect
+                            x="9"
+                            y="9"
+                            width="13"
+                            height="13"
+                            rx="2"
+                            ry="2"
+                          />
+                          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleExportActiveGraph}
+                        disabled={
+                          !activeGraph.nodes.length && !activeGraph.edges.length
+                        }
+                        title={text.exportGraph}
+                        ariaLabel={text.exportGraph}
+                      >
+                        <DownloadIcon />
+                      </IconButton>
+                    </div>
+                  ) : null
                 }
               />
             }
@@ -1394,35 +1604,6 @@ export function ResultTabs() {
                 emptyMessage={text.noPharmaYet}
                 closeDetailLabel={text.closeDetail}
                 detailTitleId="pharma-detail-title"
-                footerCenter={
-                  <CenterReportPager
-                    text={text}
-                    currentIndex={clampedActiveReportIndex}
-                    total={reportMessages.length}
-                    onChangeIndex={setActiveReportIndex}
-                  />
-                }
-                exportFileBaseName="pharma-report"
-                exportColumns={[
-                  { key: "ref", label: "Ref" },
-                  { key: "company", label: "Company" },
-                  { key: "target", label: "Target" },
-                  { key: "stage", label: "Stage" },
-                  { key: "indication", label: "Indication" },
-                  { key: "note", label: "Note" },
-                ]}
-                getExportRow={(p, i) => ({
-                  ref: `D${i + 1}`,
-                  company: p.company,
-                  target: p.target,
-                  stage: p.stage,
-                  indication: p.indication,
-                  note: p.note,
-                })}
-                exportButtonLabel={text.exportData}
-                exportCsvLabel={text.exportCsv}
-                exportExcelLabel={text.exportExcel}
-                exportJsonLabel={text.exportJson}
                 renderDetail={(
                   item,
                   _index,
@@ -1439,6 +1620,74 @@ export function ResultTabs() {
                     refNumber={refNumber}
                   />
                 )}
+              />
+            }
+            footer={
+              <ResultTabFooter
+                center={
+                  <CenterReportPager
+                    text={text}
+                    currentIndex={clampedActiveReportIndex}
+                    total={reportMessages.length}
+                    onChangeIndex={setActiveReportIndex}
+                  />
+                }
+                right={
+                  reportMessages.length > 0 ? (
+                    <div className="inline-flex items-center gap-2">
+                      <IconButton
+                        onClick={handleDeleteActiveReport}
+                        title={text.deleteReportTab}
+                        ariaLabel={text.deleteReportTab}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+                          <path d="M10 11v6M14 11v6" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleCopyActiveReport}
+                        disabled={!activeReportContent}
+                        title={text.copyReportContent}
+                        ariaLabel={text.copyReportContent}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <rect
+                            x="9"
+                            y="9"
+                            width="13"
+                            height="13"
+                            rx="2"
+                            ry="2"
+                          />
+                          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleExportActivePharma}
+                        disabled={!activePharma.length}
+                        title={text.exportJson}
+                        ariaLabel={text.exportJson}
+                      >
+                        <DownloadIcon />
+                      </IconButton>
+                    </div>
+                  ) : null
+                }
               />
             }
           />

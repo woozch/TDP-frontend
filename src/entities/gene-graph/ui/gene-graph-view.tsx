@@ -1045,10 +1045,10 @@ export function GeneGraphView({ nodes, edges }: Props) {
             <button
               type="button"
               onClick={openAdvancedSettings}
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-md border text-gray-600 hover:border-brand hover:text-brand dark:text-gray-200 ${
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-gray-600 transition hover:bg-brand/10 hover:text-brand dark:text-gray-200 dark:hover:bg-brand/20 ${
                 showAdvancedSettings
-                  ? "border-brand bg-brand/10 dark:bg-brand/20"
-                  : "border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+                  ? "bg-brand/10 dark:bg-brand/20"
+                  : "dark:bg-gray-700"
               }`}
               title="Advanced settings"
               aria-label="Advanced settings"
@@ -1120,7 +1120,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
                 );
                 setNodeColorByKind(buildDefaultNodeColorByKind(nodeKinds));
               }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:border-brand hover:text-brand dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-gray-600 transition hover:bg-brand/10 hover:text-brand dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-brand/20"
               title="Reset filters"
               aria-label="Reset filters"
             >

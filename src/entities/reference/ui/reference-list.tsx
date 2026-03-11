@@ -157,27 +157,6 @@ export function ReferenceList({ references, footerCenter }: Props) {
       closeDetailLabel={text.closeDetail}
       detailTitleId="literature-detail-title"
       footerCenter={footerCenter}
-      exportFileBaseName="literature-report"
-      exportColumns={[
-        { key: "ref", label: "Ref" },
-        { key: "title", label: "Title" },
-        { key: "source", label: "Source" },
-        { key: "year", label: "Year" },
-        { key: "summary", label: "Summary" },
-        { key: "url", label: "URL" }
-      ]}
-      getExportRow={(r, i) => ({
-        ref: `L${i + 1}`,
-        title: r.title,
-        source: r.source,
-        year: r.year,
-        summary: r.summary,
-        url: r.url
-      })}
-      exportButtonLabel={text.exportData}
-      exportCsvLabel={text.exportCsv}
-      exportExcelLabel={text.exportExcel}
-      exportJsonLabel={text.exportJson}
       onSelectionChange={onSelectionChange}
       renderDetail={(item, _index, refNumber, onClose, showCloseButton) => (
         <LiteratureDetailPanel

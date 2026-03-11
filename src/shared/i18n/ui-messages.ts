@@ -87,6 +87,7 @@ type UiText = {
   reportNavNext: string;
   reportPageOf: (current: number, total: number) => string;
   reportReadyInTab: string;
+  openFinalReport: string;
   copyReportContent: string;
   exportMarkdown: string;
   exportGraph: string;
@@ -192,6 +193,7 @@ const en: UiText = {
   reportNavNext: "Next report",
   reportPageOf: (current, total) => `${current} of ${total}`,
   reportReadyInTab: "Report ready. View in Final Report tab.",
+  openFinalReport: "Open final report",
   copyReportContent: "Copy full content",
   exportMarkdown: "Export as Markdown",
   exportGraph: "Export graph",
@@ -296,6 +298,7 @@ const ko: UiText = {
   reportNavNext: "다음 리포트",
   reportPageOf: (current, total) => `${current} / ${total}`,
   reportReadyInTab: "리포트가 준비되었습니다. 최종 리포트 탭에서 확인하세요.",
+  openFinalReport: "최종 리포트 열기",
   copyReportContent: "내용 전체 복사",
   exportMarkdown: "Markdown으로 내보내기",
   exportGraph: "그래프 내보내기",

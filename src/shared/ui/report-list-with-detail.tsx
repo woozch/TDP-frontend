@@ -239,10 +239,10 @@ export function ReportListWithDetail<T>({
             {canExport ? (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 shrink-0" ref={exportMenuRef}>
                 {exportOpen ? (
-                  <div className="absolute bottom-full right-0 mb-2 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                  <div className="absolute bottom-full right-0 mb-2 w-40 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-gray-700 dark:bg-gray-900 dark:ring-white/10">
                     <button
                       type="button"
-                      className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="w-full px-3 py-1.5 text-left text-xs font-medium text-gray-800 transition hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       onClick={() => {
                         handleExportCsv();
                         setExportOpen(false);
@@ -250,9 +250,10 @@ export function ReportListWithDetail<T>({
                     >
                       {exportCsvLabel ?? "Export CSV"}
                     </button>
+                    <div className="h-px bg-gray-100 dark:bg-gray-800" />
                     <button
                       type="button"
-                      className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="w-full px-3 py-1.5 text-left text-xs font-medium text-gray-800 transition hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       onClick={() => {
                         handleExportExcel();
                         setExportOpen(false);
@@ -260,9 +261,10 @@ export function ReportListWithDetail<T>({
                     >
                       {exportExcelLabel ?? "Export Excel"}
                     </button>
+                    <div className="h-px bg-gray-100 dark:bg-gray-800" />
                     <button
                       type="button"
-                      className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="w-full px-3 py-1.5 text-left text-xs font-medium text-gray-800 transition hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                       onClick={() => {
                         handleExportJson();
                         setExportOpen(false);
@@ -279,7 +281,7 @@ export function ReportListWithDetail<T>({
                   aria-expanded={exportOpen}
                   aria-label={exportButtonLabel ?? "Export"}
                   title={exportButtonLabel ?? "Export"}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

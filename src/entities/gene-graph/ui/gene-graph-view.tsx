@@ -743,8 +743,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
   return (
     <div className="graph-visualization flex min-h-[360px] flex-col items-stretch gap-3 lg:h-full lg:min-h-0 lg:flex-row">
       <div
-        ref={graphContainerRef}
-        className="relative min-h-[320px] min-w-0 flex-1 overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 lg:min-h-0"
+        className="relative min-h-[320px] min-w-0 flex-1 touch-pan-y rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-900 lg:min-h-0"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             setPinnedHoverCards([]);
@@ -752,7 +751,11 @@ export function GeneGraphView({ nodes, edges }: Props) {
           }
         }}
       >
-        <ForceGraph2D
+        <div
+          ref={graphContainerRef}
+          className="relative h-full min-h-[304px] w-full overflow-hidden rounded-md"
+        >
+          <ForceGraph2D
           graphData={graphData}
           width={dimensions.width}
           height={dimensions.height}
@@ -975,64 +978,65 @@ export function GeneGraphView({ nodes, edges }: Props) {
             setActiveHoverCard(null);
           }}
           backgroundColor="rgba(255,255,255,0)"
-        />
-        {mergedHoverCards.length > 0 ? (
-          <div className="pointer-events-none absolute bottom-2 right-2 top-2 grid grid-cols-1 grid-rows-3 justify-items-end gap-2 lg:bottom-2 lg:left-2 lg:right-2 lg:top-auto lg:grid-cols-3 lg:grid-rows-1 lg:justify-items-stretch">
-            {mergedHoverCards.map((card) => (
-              <div
-                key={card.id}
-                className={
-                  card.type === "edge"
-                    ? "pointer-events-auto h-full min-h-0 w-32 select-text overflow-auto rounded px-3 py-2 text-xs text-white shadow lg:h-22 lg:w-full"
-                    : "pointer-events-auto h-full min-h-0 w-32 select-text overflow-auto rounded px-3 py-2 text-xs text-white shadow lg:h-22 lg:w-full"
-                }
-                style={
-                  card.type === "node"
-                    ? {
-                        backgroundColor: withAlpha(
-                          card.nodeColor ?? "#6b7280",
-                          0.6,
-                        ),
-                      }
-                    : { backgroundColor: "rgba(31, 35, 41, 0.6)" }
-                }
-              >
-                {card.type === "edge" ? (
-                  <div className="min-w-max space-y-1">
-                    <p className="font-semibold">Relation: {card.relation}</p>
-                    <p className="whitespace-nowrap">
-                      Source:{" "}
-                      <span style={{ color: card.sourceColor }}>
-                        {card.sourceName} ({card.sourceKindLabel})
-                      </span>
-                    </p>
-                    <p className="whitespace-nowrap">
-                      Destination:{" "}
-                      <span style={{ color: card.destinationColor }}>
-                        {card.destinationName} ({card.destinationKindLabel})
-                      </span>
-                    </p>
-                    <p>Score: {card.scoreText}</p>
-                    <p>Confidence: {card.confidenceText}</p>
-                  </div>
-                ) : (
-                  <div className="min-w-max space-y-1">
-                    <p className="whitespace-nowrap font-semibold">
-                      Node: {card.nodeName}
-                    </p>
-                    <p className="whitespace-nowrap">
-                      Kind: {card.nodeKindLabel}
-                    </p>
-                    <p>Score: {card.scoreText}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : null}
+          />
+          {mergedHoverCards.length > 0 ? (
+            <div className="pointer-events-none absolute bottom-2 right-2 top-2 grid grid-cols-1 grid-rows-3 justify-items-end gap-2 lg:bottom-2 lg:left-2 lg:right-2 lg:top-auto lg:grid-cols-3 lg:grid-rows-1 lg:justify-items-stretch">
+              {mergedHoverCards.map((card) => (
+                <div
+                  key={card.id}
+                  className={
+                    card.type === "edge"
+                      ? "pointer-events-auto h-full min-h-0 w-32 select-text overflow-auto rounded px-3 py-2 text-xs text-white shadow lg:h-22 lg:w-full"
+                      : "pointer-events-auto h-full min-h-0 w-32 select-text overflow-auto rounded px-3 py-2 text-xs text-white shadow lg:h-22 lg:w-full"
+                  }
+                  style={
+                    card.type === "node"
+                      ? {
+                          backgroundColor: withAlpha(
+                            card.nodeColor ?? "#6b7280",
+                            0.6,
+                          ),
+                        }
+                      : { backgroundColor: "rgba(31, 35, 41, 0.6)" }
+                  }
+                >
+                  {card.type === "edge" ? (
+                    <div className="min-w-max space-y-1">
+                      <p className="font-semibold">Relation: {card.relation}</p>
+                      <p className="whitespace-nowrap">
+                        Source:{" "}
+                        <span style={{ color: card.sourceColor }}>
+                          {card.sourceName} ({card.sourceKindLabel})
+                        </span>
+                      </p>
+                      <p className="whitespace-nowrap">
+                        Destination:{" "}
+                        <span style={{ color: card.destinationColor }}>
+                          {card.destinationName} ({card.destinationKindLabel})
+                        </span>
+                      </p>
+                      <p>Score: {card.scoreText}</p>
+                      <p>Confidence: {card.confidenceText}</p>
+                    </div>
+                  ) : (
+                    <div className="min-w-max space-y-1">
+                      <p className="whitespace-nowrap font-semibold">
+                        Node: {card.nodeName}
+                      </p>
+                      <p className="whitespace-nowrap">
+                        Kind: {card.nodeKindLabel}
+                      </p>
+                      <p>Score: {card.scoreText}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      <aside className="relative z-10 flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:h-full lg:w-64">
+      <aside className="relative z-10 flex min-h-0 w-full shrink-0 flex-col rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 lg:h-full lg:w-64">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Graph settings
@@ -1139,7 +1143,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
           </div>
         </div>
 
-        <div className="mt-3 overflow-y-auto overflow-x-hidden pr-1 lg:min-h-0 lg:flex-1">
+        <div className="mt-3 max-h-[42vh] min-h-0 touch-pan-y overscroll-contain overflow-y-auto overflow-x-hidden pr-1 [-webkit-overflow-scrolling:touch] lg:max-h-none lg:flex-1">
           <div className="mt-0">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               Layout
@@ -1261,7 +1265,7 @@ export function GeneGraphView({ nodes, edges }: Props) {
                         Node Option
                       </p>
                       <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                        Use ";" to separate patterns. "*" wildcard is supported.
+                        Use &quot;;&quot; to separate patterns. &quot;*&quot; wildcard is supported.
                       </p>
                       <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                         {nodeKinds.map((kind) => (

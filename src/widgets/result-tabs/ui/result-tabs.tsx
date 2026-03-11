@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { TabKey, TabStatus, PharmaReportItem } from "@contracts/types";
+import type {
+  ChatMessage,
+  LiteratureItem,
+  ReferenceDetail,
+  TabKey,
+  TabStatus,
+  PharmaReportItem,
+} from "@contracts/types";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { useActiveTab } from "@/features/select-tab/model/use-active-tab";
@@ -13,7 +20,10 @@ import { ReferenceList } from "@/entities/reference/ui/reference-list";
 import { GeneGraphView } from "@/entities/gene-graph/ui/gene-graph-view";
 import { ReportListWithDetail } from "@/shared/ui/report-list-with-detail";
 
-const formatStatus = (status: TabStatus, text: ReturnType<typeof getUiText>) => {
+const formatStatus = (
+  status: TabStatus,
+  text: ReturnType<typeof getUiText>,
+) => {
   if (status === "loading") {
     return text.loading;
   }
@@ -29,7 +39,13 @@ const formatStatus = (status: TabStatus, text: ReturnType<typeof getUiText>) => 
 const TAB_INDICATOR_SIZE = 14;
 
 const RESULT_TAB_ORDER_KEY = "tdp-result-tab-order";
-const DEFAULT_TAB_ORDER: TabKey[] = ["chat", "answer", "evidence", "graph", "pharma"];
+const DEFAULT_TAB_ORDER: TabKey[] = [
+  "chat",
+  "answer",
+  "literature",
+  "graph",
+  "pharma",
+];
 
 function getStoredTabOrder(): TabKey[] {
   if (typeof window === "undefined") return [...DEFAULT_TAB_ORDER];
@@ -38,8 +54,11 @@ function getStoredTabOrder(): TabKey[] {
     if (!raw) return [...DEFAULT_TAB_ORDER];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [...DEFAULT_TAB_ORDER];
+    const migrated = (parsed as string[]).map((k) =>
+      k === "evidence" ? "literature" : k,
+    );
     const set = new Set(DEFAULT_TAB_ORDER);
-    const ordered = (parsed as string[]).filter((k): k is TabKey => set.has(k as TabKey));
+    const ordered = migrated.filter((k): k is TabKey => set.has(k as TabKey));
     if (ordered.length !== set.size) return [...DEFAULT_TAB_ORDER];
     return ordered;
   } catch {
@@ -87,7 +106,12 @@ function TabStatusIndicator({ status }: { status: TabStatus }) {
     const gap = circumference * 0.25;
     return (
       <span className="inline-flex shrink-0 text-yellow-500" aria-hidden>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="animate-spin">
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          className="animate-spin"
+        >
           <circle
             cx={cx}
             cy={cy}
@@ -104,7 +128,10 @@ function TabStatusIndicator({ status }: { status: TabStatus }) {
   }
 
   return (
-    <span className="inline-flex shrink-0 text-gray-300 dark:text-gray-500" aria-hidden>
+    <span
+      className="inline-flex shrink-0 text-gray-300 dark:text-gray-500"
+      aria-hidden
+    >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <circle
           cx={cx}
@@ -119,24 +146,65 @@ function TabStatusIndicator({ status }: { status: TabStatus }) {
   );
 }
 
-function FinalReportMarkdown({ content }: { content: string }) {
+function FinalReportMarkdown({
+  content,
+  citationMap,
+  onLiteratureCitationClick,
+}: {
+  content: string;
+  citationMap?: Record<string, string>;
+  onLiteratureCitationClick?: (refIndex1Based: number) => void;
+}) {
+  const resolvedNumeric = citationMap
+    ? content.replace(/\[(\d+)\]/g, (match, raw) => {
+        const mapped = citationMap[String(raw)];
+        return mapped ? `[${mapped}]` : match;
+      })
+    : content;
+  const resolved = resolvedNumeric.replace(/\[L(\d+)\]/g, (match, raw) => {
+    const idx = Number(raw);
+    if (!Number.isFinite(idx)) return match;
+    return `[L${idx}](tdp://literature/${idx})`;
+  });
+
+  const handleLiteratureHref = (href: string | undefined) => {
+    if (!href) return null;
+    if (!href.startsWith("tdp://literature/")) return null;
+    const raw = href.replace("tdp://literature/", "");
+    const idx = Number(raw);
+    if (!Number.isFinite(idx)) return null;
+    return idx;
+  };
+
   return (
     <div className="space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-300">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
-            <h1 className="mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100">{children}</h1>
+            <h1 className="mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100">
+              {children}
+            </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">{children}</h2>
+            <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {children}
+            </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="mt-3 text-base font-semibold text-gray-900 dark:text-gray-100">{children}</h3>
+            <h3 className="mt-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+              {children}
+            </h3>
           ),
-          p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc space-y-1 pl-5">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5">{children}</ol>,
+          p: ({ children }) => (
+            <p className="whitespace-pre-wrap">{children}</p>
+          ),
+          ul: ({ children }) => (
+            <ul className="list-disc space-y-1 pl-5">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="list-decimal space-y-1 pl-5">{children}</ol>
+          ),
           li: ({ children }) => <li>{children}</li>,
           blockquote: ({ children }) => (
             <blockquote className="border-l-2 border-brand/60 pl-3 italic text-gray-600 dark:text-gray-300">
@@ -149,6 +217,12 @@ function FinalReportMarkdown({ content }: { content: string }) {
               target="_blank"
               rel="noreferrer noopener"
               className="text-brand-ink underline decoration-brand/50 underline-offset-2 hover:text-brand dark:text-brand"
+              onClick={(e) => {
+                const idx = handleLiteratureHref(href);
+                if (idx === null) return;
+                e.preventDefault();
+                onLiteratureCitationClick?.(idx);
+              }}
             >
               {children}
             </a>
@@ -162,10 +236,10 @@ function FinalReportMarkdown({ content }: { content: string }) {
             <pre className="overflow-x-auto rounded-md bg-gray-100 p-2 text-xs dark:bg-gray-800">
               {children}
             </pre>
-          )
+          ),
         }}
       >
-        {content}
+        {resolved}
       </ReactMarkdown>
     </div>
   );
@@ -174,41 +248,47 @@ function FinalReportMarkdown({ content }: { content: string }) {
 function FinalReportCarousel({
   messages,
   text,
+  currentIndex,
+  onChangeIndex,
+  onLiteratureCitationClick,
 }: {
-  messages: { id: string; role: string; content: string; isClarifyingQuestion?: boolean }[];
+  messages: ChatMessage[];
   text: ReturnType<typeof getUiText>;
+  currentIndex: number;
+  onChangeIndex: (nextIndex: number) => void;
+  onLiteratureCitationClick?: (refIndex1Based: number) => void;
 }) {
   const removeMessageFromActiveSession = useChatSessionStore(
-    (state) => state.removeMessageFromActiveSession
+    (state) => state.removeMessageFromActiveSession,
   );
   const reportMessages = useMemo(
     () =>
       messages.filter(
-        (m) => m.role === "assistant" && m.isClarifyingQuestion !== true
+        (m) => m.role === "assistant" && m.isClarifyingQuestion !== true,
       ),
-    [messages]
+    [messages],
   );
 
-  const [currentIndex, setCurrentIndex] = useState(
-    Math.max(0, reportMessages.length - 1)
-  );
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (reportMessages.length > 0) {
-      setCurrentIndex((i) => Math.min(i, reportMessages.length - 1));
+      onChangeIndex(Math.min(currentIndex, reportMessages.length - 1));
     }
-  }, [reportMessages.length]);
+  }, [currentIndex, onChangeIndex, reportMessages.length]);
 
   const clampedIndex = Math.min(
     Math.max(0, currentIndex),
-    Math.max(0, reportMessages.length - 1)
+    Math.max(0, reportMessages.length - 1),
   );
   const currentReport = reportMessages[clampedIndex];
   const total = reportMessages.length;
   const canPrev = clampedIndex > 0;
   const canNext = clampedIndex < total - 1;
   const content = currentReport?.content?.trim() ?? "";
+  const citationMap = (currentReport as any)?.citationMap as
+    | Record<string, string>
+    | undefined;
 
   const handleCopy = async () => {
     if (!content) return;
@@ -236,103 +316,94 @@ function FinalReportCarousel({
     if (!currentReport) return;
     if (!window.confirm(text.deleteReportTabConfirm)) return;
     removeMessageFromActiveSession(currentReport.id);
-    setCurrentIndex((i) => Math.max(0, Math.min(i, reportMessages.length - 2)));
+    onChangeIndex(
+      Math.max(0, Math.min(currentIndex, reportMessages.length - 2)),
+    );
   };
-
-  const iconButtonClass =
-    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40";
 
   return (
     <article className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <FinalReportMarkdown
           content={content || text.waitingFinalReport}
+          citationMap={citationMap}
+          onLiteratureCitationClick={onLiteratureCitationClick}
         />
       </div>
-      {total >= 1 ? (
-        <nav
-          className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 dark:border-gray-600 dark:bg-gray-800"
-          aria-label="Report navigation"
-        >
-          <button
-            type="button"
-            onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-            disabled={!canPrev}
-            aria-label={text.reportNavPrev}
-            title={text.reportNavPrev}
-            className={iconButtonClass}
-          >
-            <span aria-hidden>&lt;</span>
-          </button>
-          <span className="text-gray-400 dark:text-gray-500" aria-hidden>
-            |
-          </span>
-          <span className="min-w-16 text-center text-xs font-medium text-gray-600 dark:text-gray-400">
-            {text.reportPageOf(clampedIndex + 1, total)}
-          </span>
-          <span className="text-gray-400 dark:text-gray-500" aria-hidden>
-            |
-          </span>
-          <button
-            type="button"
-            onClick={() =>
-              setCurrentIndex((i) => Math.min(total - 1, i + 1))
-            }
-            disabled={!canNext}
-            aria-label={text.reportNavNext}
-            title={text.reportNavNext}
-            className={iconButtonClass}
-          >
-            <span aria-hidden>&gt;</span>
-          </button>
-          <span className="mx-1 text-gray-300 dark:text-gray-600">|</span>
-          <button
-            type="button"
-            onClick={handleDeleteReport}
-            title={text.deleteReportTab}
-            aria-label={text.deleteReportTab}
-            className={iconButtonClass}
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
-              <path d="M10 11v6M14 11v6" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={handleCopy}
-            disabled={!content}
-            title={copied ? text.copyReportSuccess : text.copyReportContent}
-            aria-label={text.copyReportContent}
-            className={iconButtonClass}
-          >
-            {copied ? (
-              <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            ) : (
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={handleExportMarkdown}
-            disabled={!content}
-            title={text.exportMarkdown}
-            aria-label={text.exportMarkdown}
-            className={iconButtonClass}
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
-              <path d="M8 7h8M8 11h8M8 15h4" />
-            </svg>
-          </button>
-        </nav>
-      ) : null}
+      <ResultTabFooter
+        center={
+          total >= 1 ? (
+            <CenterReportPager
+              text={text}
+              currentIndex={clampedIndex}
+              total={total}
+              onChangeIndex={onChangeIndex}
+            />
+          ) : null
+        }
+        right={
+          total >= 1 ? (
+            <div className="inline-flex items-center gap-2">
+              <IconButton
+                onClick={handleDeleteReport}
+                title={text.deleteReportTab}
+                ariaLabel={text.deleteReportTab}
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden
+                >
+                  <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </IconButton>
+              <IconButton
+                onClick={handleCopy}
+                disabled={!content}
+                title={copied ? text.copyReportSuccess : text.copyReportContent}
+                ariaLabel={text.copyReportContent}
+              >
+                {copied ? (
+                  <svg
+                    className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden
+                  >
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                  </svg>
+                )}
+              </IconButton>
+              <IconButton
+                onClick={handleExportMarkdown}
+                disabled={!content}
+                title={text.exportMarkdown}
+                ariaLabel={text.exportMarkdown}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </div>
+          ) : null
+        }
+      />
     </article>
   );
 }
@@ -343,7 +414,7 @@ function PharmaDetailPanel({
   onClose,
   showCloseButton,
   titleId,
-  refNumber
+  refNumber,
 }: {
   item: PharmaReportItem;
   text: ReturnType<typeof getUiText>;
@@ -356,9 +427,15 @@ function PharmaDetailPanel({
     <article className="flex flex-col rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h4 id={titleId} className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <h4
+            id={titleId}
+            className="text-sm font-semibold text-gray-900 dark:text-gray-100"
+          >
             {refNumber ? (
-              <span className="mr-2 font-mono text-xs font-medium text-gray-500 dark:text-gray-400" aria-hidden>
+              <span
+                className="mr-2 font-mono text-xs font-medium text-gray-500 dark:text-gray-400"
+                aria-hidden
+              >
                 {refNumber}
               </span>
             ) : null}
@@ -379,16 +456,152 @@ function PharmaDetailPanel({
       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
         {item.stage} · {item.indication}
       </p>
-      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{item.note}</p>
+      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+        {item.note}
+      </p>
     </article>
   );
 }
 
-function PharmaListWithDetail({ items, text }: { items: PharmaReportItem[]; text: ReturnType<typeof getUiText> }) {
+function LiteratureDetailPopup({
+  item,
+  language,
+  text,
+  refNumber,
+  onClose,
+}: {
+  item: LiteratureItem;
+  language: string;
+  text: ReturnType<typeof getUiText>;
+  refNumber: string;
+  onClose: () => void;
+}) {
+  const [detail, setDetail] = useState<ReferenceDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    setDetail(null);
+
+    const load = async () => {
+      try {
+        const response = await fetch(
+          `/api/references/${item.id}?language=${encodeURIComponent(language)}`,
+        );
+        if (!response.ok) {
+          throw new Error(text.loadReferenceFailed);
+        }
+        const payload = (await response.json()) as ReferenceDetail;
+        if (!cancelled) {
+          setDetail(payload);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "Unknown reference error",
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [item.id, language, text.loadReferenceFailed]);
+
+  return (
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="literature-citation-detail-title"
+    >
+      <button
+        type="button"
+        aria-label={text.closeDetail}
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
+      <div
+        className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-600 dark:bg-gray-800 md:max-w-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <h4
+            id="literature-citation-detail-title"
+            className="min-w-0 flex-1 text-sm font-semibold text-gray-900 dark:text-gray-100"
+          >
+            <span
+              className="mr-2 font-mono text-xs font-medium text-gray-500 dark:text-gray-400"
+              aria-hidden
+            >
+              {refNumber}
+            </span>
+            {detail?.title ?? item.title}
+          </h4>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 select-none rounded bg-transparent px-2 py-1 text-sm font-semibold leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+            aria-label={text.closeDetail}
+          >
+            <span aria-hidden>×</span>
+          </button>
+        </div>
+
+        {isLoading ? (
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {text.loadingAbstract}
+          </p>
+        ) : null}
+        {error ? (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+        ) : null}
+
+        {!isLoading && !error ? (
+          <>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+              {detail?.abstract ?? item.summary}
+            </p>
+            {detail?.keyFindings?.length ? (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-gray-600 dark:text-gray-300">
+                {detail.keyFindings.map((k) => (
+                  <li key={k}>{k}</li>
+                ))}
+              </ul>
+            ) : null}
+            <a
+              className="mt-3 inline-block text-xs font-medium text-brand underline hover:text-brand-hover dark:text-brand"
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {text.openSource}
+            </a>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function PharmaListWithDetail({
+  items,
+  text,
+}: {
+  items: PharmaReportItem[];
+  text: ReturnType<typeof getUiText>;
+}) {
   return (
     <ReportListWithDetail<PharmaReportItem>
       items={items}
-      getRefNumber={(i) => `[P${i + 1}]`}
+      getRefNumber={(i) => `[D${i + 1}]`}
       getTitle={(p) => `${p.company} · ${p.target}`}
       getSubtitle={(p) => `${p.stage} · ${p.indication}`}
       getDescription={(p) => p.note}
@@ -396,6 +609,27 @@ function PharmaListWithDetail({ items, text }: { items: PharmaReportItem[]; text
       emptyMessage={text.noPharmaYet}
       closeDetailLabel={text.closeDetail}
       detailTitleId="pharma-detail-title"
+      exportFileBaseName="pharma-report"
+      exportColumns={[
+        { key: "ref", label: "Ref" },
+        { key: "company", label: "Company" },
+        { key: "target", label: "Target" },
+        { key: "stage", label: "Stage" },
+        { key: "indication", label: "Indication" },
+        { key: "note", label: "Note" },
+      ]}
+      getExportRow={(p, i) => ({
+        ref: `D${i + 1}`,
+        company: p.company,
+        target: p.target,
+        stage: p.stage,
+        indication: p.indication,
+        note: p.note,
+      })}
+      exportButtonLabel={text.exportData}
+      exportCsvLabel={text.exportCsv}
+      exportExcelLabel={text.exportExcel}
+      exportJsonLabel={text.exportJson}
       renderDetail={(item, _index, refNumber, onClose, showCloseButton) => (
         <PharmaDetailPanel
           item={item}
@@ -410,6 +644,155 @@ function PharmaListWithDetail({ items, text }: { items: PharmaReportItem[]; text
   );
 }
 
+function CenterReportPager({
+  text,
+  currentIndex,
+  total,
+  onChangeIndex,
+}: {
+  text: ReturnType<typeof getUiText>;
+  currentIndex: number;
+  total: number;
+  onChangeIndex: (nextIndex: number) => void;
+}) {
+  if (total <= 1) return null;
+  const clampedIndex = Math.min(Math.max(0, currentIndex), total - 1);
+  const canPrev = clampedIndex > 0;
+  const canNext = clampedIndex < total - 1;
+
+  return (
+    <nav
+      className="flex items-center justify-center gap-2"
+      aria-label="Report navigation"
+    >
+      <button
+        type="button"
+        onClick={() => onChangeIndex(Math.max(0, clampedIndex - 1))}
+        disabled={!canPrev}
+        aria-label={text.reportNavPrev}
+        title={text.reportNavPrev}
+        className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+      >
+        <span aria-hidden>&lt;</span>
+      </button>
+      <span className="text-gray-400 dark:text-gray-500" aria-hidden>
+        |
+      </span>
+      <span className="min-w-16 text-center text-[11px] font-medium text-gray-600 dark:text-gray-400">
+        {text.reportPageOf(clampedIndex + 1, total)}
+      </span>
+      <span className="text-gray-400 dark:text-gray-500" aria-hidden>
+        |
+      </span>
+      <button
+        type="button"
+        onClick={() => onChangeIndex(Math.min(total - 1, clampedIndex + 1))}
+        disabled={!canNext}
+        aria-label={text.reportNavNext}
+        title={text.reportNavNext}
+        className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+      >
+        <span aria-hidden>&gt;</span>
+      </button>
+    </nav>
+  );
+}
+
+function IconButton({
+  onClick,
+  disabled,
+  title,
+  ariaLabel,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  title: string;
+  ariaLabel: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
+}
+
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className ?? "h-4 w-4"}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M12 15V3" />
+    </svg>
+  );
+}
+
+function ResultTabFooter({
+  center,
+  right,
+}: {
+  center?: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  if (!center && !right) return null;
+  return (
+    <div className="shrink-0 touch-pan-y border-t border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800">
+      <div className="relative flex items-center justify-center">
+        {center ? <div className="min-w-0 px-3 py-2">{center}</div> : null}
+        {right ? (
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-2">
+            {right}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ResultTabBody({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-0 flex-1 overflow-hidden">{children}</div>;
+}
+
+function ResultTabLayout({
+  body,
+  footer,
+}: {
+  body: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ResultTabBody>{body}</ResultTabBody>
+      {footer ?? null}
+    </div>
+  );
+}
+
+function downloadTextFile(filename: string, content: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ResultTabs() {
   const { language } = useLanguage();
   const text = getUiText(language);
@@ -417,27 +800,58 @@ export function ResultTabs() {
   const session = useChatSessionStore((state) => state.activeSession);
   const { retryStep } = useRetryWorkflowStep();
 
+  const reportMessages = useMemo(
+    () =>
+      (session?.messages ?? []).filter(
+        (m) => m.role === "assistant" && m.isClarifyingQuestion !== true,
+      ),
+    [session?.messages],
+  );
+
+  const [activeReportIndex, setActiveReportIndex] = useState(() =>
+    Math.max(0, reportMessages.length - 1),
+  );
+
+  const clampedActiveReportIndex = Math.min(
+    Math.max(0, activeReportIndex),
+    Math.max(0, reportMessages.length - 1),
+  );
+
+  const totalReports = reportMessages.length;
+  const reportPagerCurrent =
+    totalReports > 0 ? clampedActiveReportIndex + 1 : 0;
+  const canPrevReport = totalReports > 1 && clampedActiveReportIndex > 0;
+  const canNextReport =
+    totalReports > 1 && clampedActiveReportIndex < totalReports - 1;
+
   const [tabOrder, setTabOrder] = useState<TabKey[]>(getStoredTabOrder);
   const [draggedTabKey, setDraggedTabKey] = useState<TabKey | null>(null);
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "chat", label: text.workflowProgress },
     { key: "answer", label: text.finalReport },
-    { key: "evidence", label: text.evidence },
+    { key: "literature", label: text.evidence },
     { key: "graph", label: text.geneGraph },
-    { key: "pharma", label: text.pharmaReport }
+    { key: "pharma", label: text.pharmaReport },
   ];
 
   const orderedTabs = useMemo(() => {
     const labelByKey: Record<TabKey, string> = {
       chat: text.workflowProgress,
       answer: text.finalReport,
-      evidence: text.evidence,
+      literature: text.evidence,
       graph: text.geneGraph,
-      pharma: text.pharmaReport
+      pharma: text.pharmaReport,
     };
     return tabOrder.map((key) => ({ key, label: labelByKey[key] }));
-  }, [tabOrder, text.workflowProgress, text.finalReport, text.evidence, text.geneGraph, text.pharmaReport]);
+  }, [
+    tabOrder,
+    text.workflowProgress,
+    text.finalReport,
+    text.evidence,
+    text.geneGraph,
+    text.pharmaReport,
+  ]);
 
   const workflowSteps = useMemo(() => {
     const stepByKey: Record<
@@ -447,26 +861,28 @@ export function ResultTabs() {
       answer: {
         title: text.stepDraftFinalReport,
         description: text.stepDraftFinalReportDesc,
-        inProgressDetail: text.stepDraftFinalReportLoading
+        inProgressDetail: text.stepDraftFinalReportLoading,
       },
-      evidence: {
+      literature: {
         title: text.stepCollectEvidence,
         description: text.stepCollectEvidenceDesc,
-        inProgressDetail: text.stepCollectEvidenceLoading
+        inProgressDetail: text.stepCollectEvidenceLoading,
       },
       graph: {
         title: text.stepBuildGeneGraph,
         description: text.stepBuildGeneGraphDesc,
-        inProgressDetail: text.stepBuildGeneGraphLoading
+        inProgressDetail: text.stepBuildGeneGraphLoading,
       },
       pharma: {
         title: text.stepCompilePharma,
         description: text.stepCompilePharmaDesc,
-        inProgressDetail: text.stepCompilePharmaLoading
-      }
+        inProgressDetail: text.stepCompilePharmaLoading,
+      },
     };
 
-    const orderedKeys = tabOrder.filter((key): key is Exclude<TabKey, "chat"> => key !== "chat");
+    const orderedKeys = tabOrder.filter(
+      (key): key is Exclude<TabKey, "chat"> => key !== "chat",
+    );
     return orderedKeys.map((key) => ({ key, ...stepByKey[key] }));
   }, [
     tabOrder,
@@ -481,34 +897,95 @@ export function ResultTabs() {
     text.stepBuildGeneGraphLoading,
     text.stepCompilePharma,
     text.stepCompilePharmaDesc,
-    text.stepCompilePharmaLoading
+    text.stepCompilePharmaLoading,
   ]);
 
-  if (!session) {
-    return null;
-  }
+  const activeReport = reportMessages[clampedActiveReportIndex];
 
-  const visibleTabs = session.workflowStarted
+  const activeLiterature: LiteratureItem[] = useMemo(() => {
+    const ids = activeReport?.literatureRefIds;
+    if (!session) return [];
+    if (!ids?.length) return session.literature;
+    const byId = new Map(session.literature.map((item) => [item.id, item]));
+    return ids.map((id) => byId.get(id)).filter(Boolean) as LiteratureItem[];
+  }, [activeReport?.literatureRefIds, session]);
+
+  const [openLiteratureIndex, setOpenLiteratureIndex] = useState<number | null>(
+    null,
+  );
+  const openLiteratureItem =
+    openLiteratureIndex !== null
+      ? (activeLiterature[openLiteratureIndex] ?? null)
+      : null;
+  const openLiteratureRefNumber =
+    openLiteratureIndex !== null ? `[L${openLiteratureIndex + 1}]` : "";
+
+  const onLiteratureCitationClick = useCallback(
+    (refIndex1Based: number) => {
+      const idx = refIndex1Based - 1;
+      if (idx < 0) return;
+      if (!activeLiterature[idx]) return;
+      setOpenLiteratureIndex(idx);
+    },
+    [activeLiterature],
+  );
+
+  const closeLiteraturePopup = useCallback(() => {
+    setOpenLiteratureIndex(null);
+  }, []);
+
+  const activePharma: PharmaReportItem[] = useMemo(() => {
+    const indices = activeReport?.pharmaRefIndices;
+    if (!session) return [];
+    if (!indices?.length) return session.pharma;
+    return indices
+      .map((i) => session.pharma[i - 1])
+      .filter(Boolean) as PharmaReportItem[];
+  }, [activeReport?.pharmaRefIndices, session]);
+
+  const activeGraph = useMemo(() => {
+    if (!session) return { nodes: [], edges: [] };
+    const nodeIds = activeReport?.graphRefNodeIds;
+    const edgeIndices = activeReport?.graphRefEdgeIndices;
+    const nodes = nodeIds?.length
+      ? session.graphNodes.filter((n) => nodeIds.includes(n.id))
+      : session.graphNodes;
+    const edges = edgeIndices?.length
+      ? edgeIndices.map((i) => session.graphEdges[i - 1]).filter(Boolean)
+      : session.graphEdges;
+    return { nodes, edges };
+  }, [
+    activeReport?.graphRefEdgeIndices,
+    activeReport?.graphRefNodeIds,
+    session,
+  ]);
+
+  const visibleTabs = session?.workflowStarted
     ? orderedTabs
     : orderedTabs.filter((tab) => tab.key === "chat");
   const totalWorkflowSteps = workflowSteps.length;
   const completedCount = workflowSteps.filter(
-    (step) => session.tabStatus[step.key] === "complete"
+    (step) => session?.tabStatus?.[step.key] === "complete",
   ).length;
   const loadingIndex = workflowSteps.findIndex(
-    (step) => session.tabStatus[step.key] === "loading"
+    (step) => session?.tabStatus?.[step.key] === "loading",
   );
-  const hasError = workflowSteps.some((step) => session.tabStatus[step.key] === "error");
+  const hasError = workflowSteps.some(
+    (step) => session?.tabStatus?.[step.key] === "error",
+  );
   const progressUnits =
     completedCount +
     (loadingIndex >= 0 && completedCount < totalWorkflowSteps ? 0.5 : 0);
-  const progressPercent = Math.min(100, Math.round((progressUnits / totalWorkflowSteps) * 100));
+  const progressPercent = Math.min(
+    100,
+    Math.round((progressUnits / totalWorkflowSteps) * 100),
+  );
 
   useEffect(() => {
-    if (!session.workflowStarted && activeTab !== "chat") {
+    if (!session?.workflowStarted && activeTab !== "chat") {
       setActiveTab("chat");
     }
-  }, [activeTab, session.workflowStarted, setActiveTab]);
+  }, [activeTab, session?.workflowStarted, setActiveTab]);
 
   const handleDragStart = useCallback((e: React.DragEvent, key: TabKey) => {
     setDraggedTabKey(key);
@@ -542,8 +1019,12 @@ export function ResultTabs() {
       setTabOrder(next);
       saveTabOrder(next);
     },
-    [draggedTabKey, tabOrder]
+    [draggedTabKey, tabOrder],
   );
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <section className="flex h-full flex-col overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -569,7 +1050,11 @@ export function ResultTabs() {
                     ? "border-brand bg-brand/15 text-brand-ink dark:bg-brand/20 dark:text-brand"
                     : "border-gray-300 bg-gray-50 text-gray-600 hover:border-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500"
                 } ${session.workflowStarted && visibleTabs.length > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
-                aria-label={session.workflowStarted && visibleTabs.length > 1 ? `${tab.label}, ${text.reorderTabHint}` : tab.label}
+                aria-label={
+                  session.workflowStarted && visibleTabs.length > 1
+                    ? `${tab.label}, ${text.reorderTabHint}`
+                    : tab.label
+                }
               >
                 <span className="inline-flex items-center gap-1.5">
                   {session.workflowStarted && visibleTabs.length > 1 ? (
@@ -578,7 +1063,12 @@ export function ResultTabs() {
                       aria-hidden
                       title={text.reorderTabHint}
                     >
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <svg
+                        className="h-3.5 w-3.5"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        aria-hidden
+                      >
                         <circle cx="9" cy="6" r="1.5" />
                         <circle cx="15" cy="6" r="1.5" />
                         <circle cx="9" cy="12" r="1.5" />
@@ -590,7 +1080,9 @@ export function ResultTabs() {
                   ) : null}
                   <span>{tab.label}</span>
                   <TabStatusIndicator status={status} />
-                  <span className="sr-only">· {formatStatus(status, text)}</span>
+                  <span className="sr-only">
+                    · {formatStatus(status, text)}
+                  </span>
                 </span>
               </button>
             );
@@ -608,9 +1100,44 @@ export function ResultTabs() {
           <div className="space-y-4">
             {session.workflowStarted ? (
               <section className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-600 dark:bg-gray-900/60">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  {text.workflowStatus}
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    {text.workflowStatus}
+                  </p>
+                  <div className="inline-flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveReportIndex((idx) => Math.max(0, idx - 1))
+                      }
+                      disabled={!canPrevReport}
+                      aria-label={text.reportNavPrev}
+                      title={text.reportNavPrev}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+                    >
+                      <span aria-hidden>&lt;</span>
+                    </button>
+                    <span className="text-[11px] font-medium text-gray-600 dark:text-gray-400">
+                      {text.reportPageOf(reportPagerCurrent, totalReports)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveReportIndex((idx) =>
+                          totalReports > 0
+                            ? Math.min(totalReports - 1, idx + 1)
+                            : 0,
+                        )
+                      }
+                      disabled={!canNextReport}
+                      aria-label={text.reportNavNext}
+                      title={text.reportNavNext}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+                    >
+                      <span aria-hidden>&gt;</span>
+                    </button>
+                  </div>
+                </div>
                 <div className="mt-2">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                     <div
@@ -623,7 +1150,11 @@ export function ResultTabs() {
                   <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
                     {hasError
                       ? text.workflowPausedByError
-                      : text.workflowProgressSummary(progressPercent, completedCount, totalWorkflowSteps)}
+                      : text.workflowProgressSummary(
+                          progressPercent,
+                          completedCount,
+                          totalWorkflowSteps,
+                        )}
                   </p>
                 </div>
                 <ul className="mt-2 space-y-2">
@@ -646,7 +1177,7 @@ export function ResultTabs() {
                                 ? "bg-emerald-500"
                                 : isLoading
                                   ? "bg-brand"
-                                : "bg-gray-300 dark:bg-gray-600"
+                                  : "bg-gray-300 dark:bg-gray-600"
                           }`}
                         />
                         <div className="min-w-0 flex-1">
@@ -684,7 +1215,9 @@ export function ResultTabs() {
                               type="button"
                               onClick={() => void retryStep(step.key)}
                               className={`inline-flex h-5 w-5 items-center justify-center rounded hover:bg-brand/10 ${
-                                status === "error" ? "text-brand" : "text-emerald-500"
+                                status === "error"
+                                  ? "text-brand"
+                                  : "text-emerald-500"
                               }`}
                               title={
                                 status === "complete"
@@ -734,7 +1267,8 @@ export function ResultTabs() {
                   const isClarifying =
                     !isUser &&
                     (message.isClarifyingQuestion === true ||
-                      (typeof message.content === "string" && message.content.trim().endsWith("?")));
+                      (typeof message.content === "string" &&
+                        message.content.trim().endsWith("?")));
                   const isReport = !isUser && !isClarifying;
                   const isLastMessage = index === session.messages.length - 1;
                   const isStreamingReport =
@@ -755,7 +1289,6 @@ export function ResultTabs() {
 
                   return (
                     <div
-                      // eslint-disable-next-line react/no-array-index-key
                       key={`${message.id}-${index}`}
                       className={`rounded-lg p-3 text-sm ${
                         isUser
@@ -779,14 +1312,145 @@ export function ResultTabs() {
           </div>
         ) : null}
         {activeTab === "answer" ? (
-          <FinalReportCarousel messages={session.messages} text={text} />
+          <FinalReportCarousel
+            messages={session.messages}
+            text={text}
+            currentIndex={clampedActiveReportIndex}
+            onChangeIndex={setActiveReportIndex}
+            onLiteratureCitationClick={onLiteratureCitationClick}
+          />
         ) : null}
-        {activeTab === "evidence" ? <ReferenceList references={session.evidence} /> : null}
+        {activeTab === "literature" ? (
+          <ResultTabLayout
+            body={
+              <ReferenceList
+                references={activeLiterature}
+                footerCenter={
+                  <CenterReportPager
+                    text={text}
+                    currentIndex={clampedActiveReportIndex}
+                    total={reportMessages.length}
+                    onChangeIndex={setActiveReportIndex}
+                  />
+                }
+              />
+            }
+          />
+        ) : null}
         {activeTab === "graph" ? (
-          <GeneGraphView nodes={session.graphNodes} edges={session.graphEdges} />
+          <ResultTabLayout
+            body={
+              <div className="h-full min-h-0 touch-pan-y overscroll-contain overflow-y-auto">
+                <GeneGraphView
+                  nodes={activeGraph.nodes}
+                  edges={activeGraph.edges}
+                />
+              </div>
+            }
+            footer={
+              <ResultTabFooter
+                center={
+                  <CenterReportPager
+                    text={text}
+                    currentIndex={clampedActiveReportIndex}
+                    total={reportMessages.length}
+                    onChangeIndex={setActiveReportIndex}
+                  />
+                }
+                right={
+                  <IconButton
+                    onClick={() => {
+                      const payload = JSON.stringify(
+                        { nodes: activeGraph.nodes, edges: activeGraph.edges },
+                        null,
+                        2,
+                      );
+                      downloadTextFile(
+                        "gene-graph.json",
+                        payload,
+                        "application/json;charset=utf-8",
+                      );
+                    }}
+                    title={text.exportGraph}
+                    ariaLabel={text.exportGraph}
+                  >
+                    <DownloadIcon />
+                  </IconButton>
+                }
+              />
+            }
+          />
         ) : null}
         {activeTab === "pharma" ? (
-          <PharmaListWithDetail items={session.pharma} text={text} />
+          <ResultTabLayout
+            body={
+              <ReportListWithDetail<PharmaReportItem>
+                items={activePharma}
+                getRefNumber={(i) => `[D${i + 1}]`}
+                getTitle={(p) => `${p.company} · ${p.target}`}
+                getSubtitle={(p) => `${p.stage} · ${p.indication}`}
+                getDescription={(p) => p.note}
+                getItemKey={(p, idx) => `${p.company}-${p.target}-${idx}`}
+                emptyMessage={text.noPharmaYet}
+                closeDetailLabel={text.closeDetail}
+                detailTitleId="pharma-detail-title"
+                footerCenter={
+                  <CenterReportPager
+                    text={text}
+                    currentIndex={clampedActiveReportIndex}
+                    total={reportMessages.length}
+                    onChangeIndex={setActiveReportIndex}
+                  />
+                }
+                exportFileBaseName="pharma-report"
+                exportColumns={[
+                  { key: "ref", label: "Ref" },
+                  { key: "company", label: "Company" },
+                  { key: "target", label: "Target" },
+                  { key: "stage", label: "Stage" },
+                  { key: "indication", label: "Indication" },
+                  { key: "note", label: "Note" },
+                ]}
+                getExportRow={(p, i) => ({
+                  ref: `D${i + 1}`,
+                  company: p.company,
+                  target: p.target,
+                  stage: p.stage,
+                  indication: p.indication,
+                  note: p.note,
+                })}
+                exportButtonLabel={text.exportData}
+                exportCsvLabel={text.exportCsv}
+                exportExcelLabel={text.exportExcel}
+                exportJsonLabel={text.exportJson}
+                renderDetail={(
+                  item,
+                  _index,
+                  refNumber,
+                  onClose,
+                  showCloseButton,
+                ) => (
+                  <PharmaDetailPanel
+                    item={item}
+                    text={text}
+                    onClose={onClose}
+                    showCloseButton={showCloseButton}
+                    titleId="pharma-detail-title"
+                    refNumber={refNumber}
+                  />
+                )}
+              />
+            }
+          />
+        ) : null}
+        {openLiteratureItem ? (
+          <LiteratureDetailPopup
+            item={openLiteratureItem}
+            language={language}
+            text={text}
+            refNumber={openLiteratureRefNumber}
+            onClose={closeLiteraturePopup}
+          />
         ) : null}
       </div>
     </section>

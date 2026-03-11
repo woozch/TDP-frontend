@@ -528,7 +528,8 @@ export function ResultTabs() {
   const handleDrop = useCallback(
     (e: React.DragEvent, dropTargetKey: TabKey) => {
       e.preventDefault();
-      const key = draggedTabKey;
+      const raw = e.dataTransfer.getData("text/plain");
+      const key = (raw as TabKey) || draggedTabKey;
       setDraggedTabKey(null);
       if (!key || key === dropTargetKey) return;
       const fromIdx = tabOrder.indexOf(key);

@@ -1350,7 +1350,7 @@ export function ResultTabs() {
                   </section>
                 ) : null}
 
-                <section className="max-h-80 space-y-3 overflow-auto pr-2">
+                <section className="space-y-3">
                   {session.messages.length === 0 ? (
                     <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
                       <p>{text.emptyWorkflowMessage}</p>

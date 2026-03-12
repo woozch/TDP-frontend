@@ -344,7 +344,7 @@ function FinalReportCarousel({
         }
         right={
           total >= 1 ? (
-            <div className="inline-flex items-center gap-2">
+            <div className="inline-flex items-center gap-1">
               <IconButton
                 onClick={handleDeleteReport}
                 title={text.deleteReportTab}
@@ -748,7 +748,7 @@ function ResultTabFooter({
 }) {
   if (!center && !right) return null;
   return (
-    <div className="shrink-0 touch-pan-y border-t border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800">
+    <div className="mt-px shrink-0 touch-pan-y border-t border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800">
       <div className="flex items-center gap-3 px-3 py-2">
         {center ? <div className="min-w-0">{center}</div> : null}
         {right ? <div className="ml-auto shrink-0">{right}</div> : null}
@@ -1121,7 +1121,7 @@ export function ResultTabs() {
 
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="sticky top-0 z-10 isolate mb-0 flex flex-col border-b border-gray-200 bg-white px-4 pb-2 pt-4 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
+      <div className="sticky top-0 z-10 isolate mb-px flex flex-col border-b border-gray-200 bg-white px-4 pb-2 pt-4 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => {
             const status = effectiveTabStatus[tab.key];
@@ -1195,252 +1195,253 @@ export function ResultTabs() {
               <div className="scrollbar-gutter-stable space-y-4 px-4 py-4">
                 {session.workflowStarted ? (
                   <section className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-600 dark:bg-gray-900/60">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    {text.workflowStatus}
-                  </p>
-                  <div className="inline-flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveReportIndex((idx) => Math.max(0, idx - 1))
-                      }
-                      disabled={!canPrevReport}
-                      aria-label={text.reportNavPrev}
-                      title={text.reportNavPrev}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
-                    >
-                      <span aria-hidden>&lt;</span>
-                    </button>
-                    <span className="text-[11px] font-medium text-gray-600 dark:text-gray-400">
-                      {text.reportPageOf(reportPagerCurrent, totalReports)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveReportIndex((idx) =>
-                          totalReports > 0
-                            ? Math.min(totalReports - 1, idx + 1)
-                            : 0,
-                        )
-                      }
-                      disabled={!canNextReport}
-                      aria-label={text.reportNavNext}
-                      title={text.reportNavNext}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
-                    >
-                      <span aria-hidden>&gt;</span>
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className={`h-full transition-all duration-500 ${
-                        hasError ? "bg-red-500" : "bg-brand"
-                      }`}
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                    {hasError
-                      ? text.workflowPausedByError
-                      : text.workflowProgressSummary(
-                          progressPercent,
-                          completedCount,
-                          totalWorkflowSteps,
-                        )}
-                  </p>
-                </div>
-                <ul className="mt-2 space-y-2">
-                  {workflowSteps.map((step) => {
-                    const status = effectiveTabStatus[step.key];
-                    const isLoading = status === "loading";
-                    const isComplete = status === "complete";
-                    const isError = status === "error";
-
-                    return (
-                      <li
-                        key={step.key}
-                        className="flex items-start gap-2 rounded-md px-2 py-1.5"
-                      >
-                        <span
-                          className={`mt-0.5 inline-flex h-2 w-2 shrink-0 rounded-full ${
-                            isError
-                              ? "bg-red-500"
-                              : isComplete
-                                ? "bg-emerald-500"
-                                : isLoading
-                                  ? "bg-brand"
-                                  : "bg-gray-300 dark:bg-gray-600"
-                          }`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-gray-800 dark:text-gray-100">
-                            {step.title}
-                          </p>
-                          {status === "loading" ? (
-                            <p className="text-[11px] text-brand-ink dark:text-brand">
-                              {step.inProgressDetail}
-                            </p>
-                          ) : status === "complete" ? (
-                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                              {text.stepCompleted}
-                            </p>
-                          ) : status === "error" ? (
-                            <p className="text-[11px] text-red-600 dark:text-red-400">
-                              {text.stepFailedRetry}
-                            </p>
-                          ) : (
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                              {step.description}
-                            </p>
-                          )}
-                        </div>
-                        <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
-                          {status === "loading"
-                            ? text.inProgress
-                            : status === "complete"
-                              ? text.done
-                              : status === "error"
-                                ? text.fail
-                                : text.pending}
-                          {status === "error" || status === "complete" ? (
-                            <button
-                              type="button"
-                              onClick={() => void retryStep(step.key)}
-                              className={`inline-flex h-5 w-5 items-center justify-center rounded hover:bg-brand/10 ${
-                                status === "error"
-                                  ? "text-brand"
-                                  : "text-emerald-500"
-                              }`}
-                              title={
-                                status === "complete"
-                                  ? text.runStepAgain(step.title)
-                                  : text.retryStep(step.title)
-                              }
-                              aria-label={
-                                status === "complete"
-                                  ? text.runStepAgain(step.title)
-                                  : text.retryStep(step.title)
-                              }
-                            >
-                              <svg
-                                className="h-3.5 w-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                aria-hidden
-                              >
-                                <path d="M3 12a9 9 0 0 1 15.55-6.36L21 8" />
-                                <path d="M21 3v5h-5" />
-                                <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16" />
-                                <path d="M8 16H3v5" />
-                              </svg>
-                            </button>
-                          ) : null}
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {text.workflowStatus}
+                      </p>
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveReportIndex((idx) => Math.max(0, idx - 1))
+                          }
+                          disabled={!canPrevReport}
+                          aria-label={text.reportNavPrev}
+                          title={text.reportNavPrev}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+                        >
+                          <span aria-hidden>&lt;</span>
+                        </button>
+                        <span className="text-[11px] font-medium text-gray-600 dark:text-gray-400">
+                          {text.reportPageOf(reportPagerCurrent, totalReports)}
                         </span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveReportIndex((idx) =>
+                              totalReports > 0
+                                ? Math.min(totalReports - 1, idx + 1)
+                                : 0,
+                            )
+                          }
+                          disabled={!canNextReport}
+                          aria-label={text.reportNavNext}
+                          title={text.reportNavNext}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded bg-transparent text-[11px] text-gray-700 transition hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700 dark:disabled:opacity-40"
+                        >
+                          <span aria-hidden>&gt;</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div
+                          className={`h-full transition-all duration-500 ${
+                            hasError ? "bg-red-500" : "bg-brand"
+                          }`}
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                        {hasError
+                          ? text.workflowPausedByError
+                          : text.workflowProgressSummary(
+                              progressPercent,
+                              completedCount,
+                              totalWorkflowSteps,
+                            )}
+                      </p>
+                    </div>
+                    <ul className="mt-2 space-y-2">
+                      {workflowSteps.map((step) => {
+                        const status = effectiveTabStatus[step.key];
+                        const isLoading = status === "loading";
+                        const isComplete = status === "complete";
+                        const isError = status === "error";
+
+                        return (
+                          <li
+                            key={step.key}
+                            className="flex items-start gap-2 rounded-md px-2 py-1.5"
+                          >
+                            <span
+                              className={`mt-0.5 inline-flex h-2 w-2 shrink-0 rounded-full ${
+                                isError
+                                  ? "bg-red-500"
+                                  : isComplete
+                                    ? "bg-emerald-500"
+                                    : isLoading
+                                      ? "bg-brand"
+                                      : "bg-gray-300 dark:bg-gray-600"
+                              }`}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-gray-800 dark:text-gray-100">
+                                {step.title}
+                              </p>
+                              {status === "loading" ? (
+                                <p className="text-[11px] text-brand-ink dark:text-brand">
+                                  {step.inProgressDetail}
+                                </p>
+                              ) : status === "complete" ? (
+                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                                  {text.stepCompleted}
+                                </p>
+                              ) : status === "error" ? (
+                                <p className="text-[11px] text-red-600 dark:text-red-400">
+                                  {text.stepFailedRetry}
+                                </p>
+                              ) : (
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                  {step.description}
+                                </p>
+                              )}
+                            </div>
+                            <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                              {status === "loading"
+                                ? text.inProgress
+                                : status === "complete"
+                                  ? text.done
+                                  : status === "error"
+                                    ? text.fail
+                                    : text.pending}
+                              {status === "error" || status === "complete" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void retryStep(step.key)}
+                                  className={`inline-flex h-5 w-5 items-center justify-center rounded hover:bg-brand/10 ${
+                                    status === "error"
+                                      ? "text-brand"
+                                      : "text-emerald-500"
+                                  }`}
+                                  title={
+                                    status === "complete"
+                                      ? text.runStepAgain(step.title)
+                                      : text.retryStep(step.title)
+                                  }
+                                  aria-label={
+                                    status === "complete"
+                                      ? text.runStepAgain(step.title)
+                                      : text.retryStep(step.title)
+                                  }
+                                >
+                                  <svg
+                                    className="h-3.5 w-3.5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden
+                                  >
+                                    <path d="M3 12a9 9 0 0 1 15.55-6.36L21 8" />
+                                    <path d="M21 3v5h-5" />
+                                    <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16" />
+                                    <path d="M8 16H3v5" />
+                                  </svg>
+                                </button>
+                              ) : null}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </section>
                 ) : null}
 
                 <section className="max-h-80 space-y-3 overflow-auto pr-2">
-              {session.messages.length === 0 ? (
-                <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
-                  <p>{text.emptyWorkflowMessage}</p>
-                  <p className="text-xs">{text.emptyWorkflowHint}</p>
-                </div>
-              ) : (
-                session.messages.map((message, index) => {
-                  const isUser = message.role === "user";
-                  const isClarifying =
-                    !isUser &&
-                    (message.isClarifyingQuestion === true ||
-                      (typeof message.content === "string" &&
-                        message.content.trim().endsWith("?")));
-                  const isReport = !isUser && !isClarifying;
-                  const isLastMessage = index === session.messages.length - 1;
-                  const isStreamingReport =
-                    isReport && isLastMessage && session.isStreaming;
-                  const reportIndex = isReport
-                    ? reportIndexByMessageId.get(message.id)
-                    : undefined;
-                  const label = isUser
-                    ? text.yourQuery
-                    : isClarifying
-                      ? text.assistantClarifying
-                      : text.assistant;
-
-                  const chatContent = isUser
-                    ? message.content || "…"
-                    : isClarifying
-                      ? message.content || ""
-                      : isStreamingReport
-                        ? text.streaming
-                        : text.reportReadyInTab;
-
-                  return (
-                    <div
-                      key={`${message.id}-${index}`}
-                      className={`rounded-lg p-3 text-sm ${
-                        isUser
-                          ? "ml-8 border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-900/60"
-                          : isClarifying
-                            ? "mr-8 border border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15"
-                            : "mr-8 border border-brand/40 bg-brand/10 dark:bg-brand/15"
-                      }`}
-                    >
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        {label}
-                      </p>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-                          {chatContent}
-                        </p>
-                        {!isUser &&
-                        !isClarifying &&
-                        !isStreamingReport &&
-                        typeof reportIndex === "number" ? (
-                          <IconButton
-                            onClick={() => {
-                              setActiveReportIndex(reportIndex);
-                              setActiveTab("answer");
-                            }}
-                            title={text.openFinalReport}
-                            ariaLabel={text.openFinalReport}
-                            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-brand/0 text-brand transition hover:bg-brand/15 disabled:pointer-events-none disabled:opacity-40 dark:bg-brand/15 dark:text-brand dark:hover:bg-brand/20"
-                          >
-                            <svg
-                              className="h-3.5 w-3.5"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden
-                            >
-                              <path d="M7 17L17 7" />
-                              <path d="M7 7h10v10" />
-                            </svg>
-                          </IconButton>
-                        ) : null}
-                      </div>
+                  {session.messages.length === 0 ? (
+                    <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
+                      <p>{text.emptyWorkflowMessage}</p>
+                      <p className="text-xs">{text.emptyWorkflowHint}</p>
                     </div>
-                  );
-                })
-              )}
-            </section>
+                  ) : (
+                    session.messages.map((message, index) => {
+                      const isUser = message.role === "user";
+                      const isClarifying =
+                        !isUser &&
+                        (message.isClarifyingQuestion === true ||
+                          (typeof message.content === "string" &&
+                            message.content.trim().endsWith("?")));
+                      const isReport = !isUser && !isClarifying;
+                      const isLastMessage =
+                        index === session.messages.length - 1;
+                      const isStreamingReport =
+                        isReport && isLastMessage && session.isStreaming;
+                      const reportIndex = isReport
+                        ? reportIndexByMessageId.get(message.id)
+                        : undefined;
+                      const label = isUser
+                        ? text.yourQuery
+                        : isClarifying
+                          ? text.assistantClarifying
+                          : text.assistant;
+
+                      const chatContent = isUser
+                        ? message.content || "…"
+                        : isClarifying
+                          ? message.content || ""
+                          : isStreamingReport
+                            ? text.streaming
+                            : text.reportReadyInTab;
+
+                      return (
+                        <div
+                          key={`${message.id}-${index}`}
+                          className={`rounded-lg p-3 text-sm ${
+                            isUser
+                              ? "ml-8 border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-900/60"
+                              : isClarifying
+                                ? "mr-8 border border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15"
+                                : "mr-8 border border-brand/40 bg-brand/10 dark:bg-brand/15"
+                          }`}
+                        >
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            {label}
+                          </p>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                              {chatContent}
+                            </p>
+                            {!isUser &&
+                            !isClarifying &&
+                            !isStreamingReport &&
+                            typeof reportIndex === "number" ? (
+                              <IconButton
+                                onClick={() => {
+                                  setActiveReportIndex(reportIndex);
+                                  setActiveTab("answer");
+                                }}
+                                title={text.openFinalReport}
+                                ariaLabel={text.openFinalReport}
+                                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-brand/0 text-brand transition hover:bg-brand/15 disabled:pointer-events-none disabled:opacity-40 dark:bg-brand/15 dark:text-brand dark:hover:bg-brand/20"
+                              >
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  aria-hidden
+                                >
+                                  <path d="M7 17L17 7" />
+                                  <path d="M7 7h10v10" />
+                                </svg>
+                              </IconButton>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </section>
               </div>
             }
             footer={
-              <div className="px-4 pb-4">
+              <div className="mt-px border-t border-gray-200 bg-white px-4 pb-4 pt-3 dark:border-gray-700 dark:bg-gray-800">
                 <ChatWorkspace />
               </div>
             }
@@ -1452,9 +1453,11 @@ export function ResultTabs() {
               <div className="px-4 py-4">
                 <FinalReportMarkdown
                   content={activeReportContent || text.waitingFinalReport}
-                  citationMap={(activeReport as any)?.citationMap as
-                    | Record<string, string>
-                    | undefined}
+                  citationMap={
+                    (activeReport as any)?.citationMap as
+                      | Record<string, string>
+                      | undefined
+                  }
                   onLiteratureCitationClick={onLiteratureCitationClick}
                 />
               </div>
@@ -1503,7 +1506,14 @@ export function ResultTabs() {
                           strokeWidth="2"
                           aria-hidden
                         >
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <rect
+                            x="9"
+                            y="9"
+                            width="13"
+                            height="13"
+                            rx="2"
+                            ry="2"
+                          />
                           <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
                         </svg>
                       </IconButton>

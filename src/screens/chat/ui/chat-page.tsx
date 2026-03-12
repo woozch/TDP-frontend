@@ -64,7 +64,7 @@ export function ChatPage() {
           <button
             type="button"
             aria-label={text.closeMenu}
-            className="fixed inset-0 z-30 bg-black/40 md:hidden"
+            className="fixed inset-0 z-30 bg-black/20 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         ) : null}
@@ -75,7 +75,7 @@ export function ChatPage() {
             flex flex-col bg-white shadow-xl dark:bg-gray-950
             min-h-0
             fixed left-0 top-12 bottom-0 z-40 w-72
-            transition-[transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform
+            transform-gpu transition-transform duration-300 ease-out
             md:static md:top-0 md:left-0 md:z-auto md:shrink-0 md:overflow-hidden md:transition-[width] md:duration-200 md:ease-out md:will-change-auto
             ${sidebarOpen ? "translate-x-0 md:w-72" : "-translate-x-full md:translate-x-0 md:w-0"}
           `}

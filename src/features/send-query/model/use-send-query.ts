@@ -10,11 +10,7 @@ export function useSendQuery() {
   const { language } = useLanguage();
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const startQuery = useChatSessionStore((state) => state.startQuery);
-  const appendAnswerToken = useChatSessionStore((state) => state.appendAnswerToken);
-  const setLiterature = useChatSessionStore((state) => state.setLiterature);
-  const setGraph = useChatSessionStore((state) => state.setGraph);
-  const setPharma = useChatSessionStore((state) => state.setPharma);
-  const completeStream = useChatSessionStore((state) => state.completeStream);
+  const applyStreamEvent = useChatSessionStore((state) => state.applyStreamEvent);
   const setError = useChatSessionStore((state) => state.setError);
   const setSessionLanguage = useChatSessionStore((state) => state.setSessionLanguage);
 
@@ -34,28 +30,7 @@ export function useSendQuery() {
         sessionId: activeSession.id,
         language,
         onEvent: (event) => {
-          switch (event.type) {
-            case "answer.delta":
-              appendAnswerToken(event.payload.token);
-              break;
-            case "literature.ready":
-              setLiterature(event.payload.references);
-              break;
-            case "graph.ready":
-              setGraph(event.payload.nodes, event.payload.edges);
-              break;
-            case "pharma.ready":
-              setPharma(event.payload.items);
-              break;
-            case "done":
-              completeStream();
-              break;
-            case "error":
-              setError(event.payload.message);
-              break;
-            default:
-              break;
-          }
+          applyStreamEvent(event);
         }
       });
     } catch (error) {

@@ -63,6 +63,11 @@ body {
   box-sizing: border-box;
 }
 
+/* Reserve space for scrollbars so they don't overlay content. */
+.scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
 /* Dual-thumb range input for score filters */
 .tdp-range-thumb::-webkit-slider-runnable-track {
   height: 0;

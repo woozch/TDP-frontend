@@ -19,6 +19,7 @@ import { useChatSessionStore } from "@/entities/chat-session/model/session-store
 import { ReferenceList } from "@/entities/reference/ui/reference-list";
 import { GeneGraphView } from "@/entities/gene-graph/ui/gene-graph-view";
 import { ReportListWithDetail } from "@/shared/ui/report-list-with-detail";
+import { ChatWorkspace } from "@/widgets/chat-workspace";
 
 const formatStatus = (
   status: TabStatus,
@@ -757,7 +758,7 @@ function ResultTabFooter({
 }
 
 function ResultTabBody({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-0 flex-1 overflow-hidden">{children}</div>;
+  return <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>;
 }
 
 function ResultTabLayout({
@@ -1023,6 +1024,15 @@ export function ResultTabs() {
     }
   }, [activeReportContent]);
 
+  const handleExportActiveReportMarkdown = useCallback(() => {
+    if (!activeReportContent) return;
+    downloadTextFile(
+      `report-${clampedActiveReportIndex + 1}.md`,
+      activeReportContent,
+      "text/markdown;charset=utf-8",
+    );
+  }, [activeReportContent, clampedActiveReportIndex]);
+
   const handleExportActiveLiterature = useCallback(() => {
     if (!activeLiterature.length) return;
     const payload = JSON.stringify(activeLiterature, null, 2);
@@ -1110,7 +1120,7 @@ export function ResultTabs() {
   }
 
   return (
-    <section className="flex h-full flex-col overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <section className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="sticky top-0 z-10 isolate mb-0 flex flex-col border-b border-gray-200 bg-white px-4 pb-2 pt-4 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => {
@@ -1178,11 +1188,13 @@ export function ResultTabs() {
         ) : null}
       </div>
 
-      <div className="relative z-0 flex min-h-0 flex-1 flex-col p-4 pt-0 text-gray-800 dark:text-gray-200">
+      <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden text-gray-800 dark:text-gray-200">
         {activeTab === "chat" ? (
-          <div className="space-y-4">
-            {session.workflowStarted ? (
-              <section className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-600 dark:bg-gray-900/60">
+          <ResultTabLayout
+            body={
+              <div className="scrollbar-gutter-stable space-y-4 px-4 py-4">
+                {session.workflowStarted ? (
+                  <section className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-600 dark:bg-gray-900/60">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {text.workflowStatus}
@@ -1335,10 +1347,10 @@ export function ResultTabs() {
                     );
                   })}
                 </ul>
-              </section>
-            ) : null}
+                  </section>
+                ) : null}
 
-            <section className="max-h-80 space-y-3 overflow-auto pr-2">
+                <section className="max-h-80 space-y-3 overflow-auto pr-2">
               {session.messages.length === 0 ? (
                 <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
                   <p>{text.emptyWorkflowMessage}</p>
@@ -1425,20 +1437,98 @@ export function ResultTabs() {
                 })
               )}
             </section>
-          </div>
+              </div>
+            }
+            footer={
+              <div className="px-4 pb-4">
+                <ChatWorkspace />
+              </div>
+            }
+          />
         ) : null}
         {activeTab === "answer" ? (
-          <FinalReportCarousel
-            messages={session.messages}
-            text={text}
-            currentIndex={clampedActiveReportIndex}
-            onChangeIndex={setActiveReportIndex}
-            onLiteratureCitationClick={onLiteratureCitationClick}
+          <ResultTabLayout
+            body={
+              <div className="px-4 py-4">
+                <FinalReportMarkdown
+                  content={activeReportContent || text.waitingFinalReport}
+                  citationMap={(activeReport as any)?.citationMap as
+                    | Record<string, string>
+                    | undefined}
+                  onLiteratureCitationClick={onLiteratureCitationClick}
+                />
+              </div>
+            }
+            footer={
+              <ResultTabFooter
+                center={
+                  <CenterReportPager
+                    text={text}
+                    currentIndex={clampedActiveReportIndex}
+                    total={reportMessages.length}
+                    onChangeIndex={setActiveReportIndex}
+                  />
+                }
+                right={
+                  reportMessages.length > 0 ? (
+                    <div className="inline-flex items-center gap-2">
+                      <IconButton
+                        onClick={handleDeleteActiveReport}
+                        title={text.deleteReportTab}
+                        ariaLabel={text.deleteReportTab}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+                          <path d="M10 11v6M14 11v6" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleCopyActiveReport}
+                        disabled={!activeReportContent}
+                        title={text.copyReportContent}
+                        ariaLabel={text.copyReportContent}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
+                        >
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                        </svg>
+                      </IconButton>
+                      <IconButton
+                        onClick={handleExportActiveReportMarkdown}
+                        disabled={!activeReportContent}
+                        title={text.exportMarkdown}
+                        ariaLabel={text.exportMarkdown}
+                      >
+                        <DownloadIcon />
+                      </IconButton>
+                    </div>
+                  ) : null
+                }
+              />
+            }
           />
         ) : null}
         {activeTab === "literature" ? (
           <ResultTabLayout
-            body={<ReferenceList references={activeLiterature} />}
+            body={
+              <div className="px-4 pb-4">
+                <ReferenceList references={activeLiterature} />
+              </div>
+            }
             footer={
               <ResultTabFooter
                 center={
@@ -1512,11 +1602,13 @@ export function ResultTabs() {
         {activeTab === "graph" ? (
           <ResultTabLayout
             body={
-              <div className="h-full min-h-0 touch-pan-y overscroll-contain overflow-y-auto">
-                <GeneGraphView
-                  nodes={activeGraph.nodes}
-                  edges={activeGraph.edges}
-                />
+              <div className="scrollbar-gutter-stable h-full min-h-0 touch-pan-y overscroll-contain overflow-y-auto">
+                <div className="px-4 pb-4">
+                  <GeneGraphView
+                    nodes={activeGraph.nodes}
+                    edges={activeGraph.edges}
+                  />
+                </div>
               </div>
             }
             footer={
@@ -1594,33 +1686,35 @@ export function ResultTabs() {
         {activeTab === "pharma" ? (
           <ResultTabLayout
             body={
-              <ReportListWithDetail<PharmaReportItem>
-                items={activePharma}
-                getRefNumber={(i) => `[D${i + 1}]`}
-                getTitle={(p) => `${p.company} · ${p.target}`}
-                getSubtitle={(p) => `${p.stage} · ${p.indication}`}
-                getDescription={(p) => p.note}
-                getItemKey={(p, idx) => `${p.company}-${p.target}-${idx}`}
-                emptyMessage={text.noPharmaYet}
-                closeDetailLabel={text.closeDetail}
-                detailTitleId="pharma-detail-title"
-                renderDetail={(
-                  item,
-                  _index,
-                  refNumber,
-                  onClose,
-                  showCloseButton,
-                ) => (
-                  <PharmaDetailPanel
-                    item={item}
-                    text={text}
-                    onClose={onClose}
-                    showCloseButton={showCloseButton}
-                    titleId="pharma-detail-title"
-                    refNumber={refNumber}
-                  />
-                )}
-              />
+              <div className="px-4 pb-4">
+                <ReportListWithDetail<PharmaReportItem>
+                  items={activePharma}
+                  getRefNumber={(i) => `[D${i + 1}]`}
+                  getTitle={(p) => `${p.company} · ${p.target}`}
+                  getSubtitle={(p) => `${p.stage} · ${p.indication}`}
+                  getDescription={(p) => p.note}
+                  getItemKey={(p, idx) => `${p.company}-${p.target}-${idx}`}
+                  emptyMessage={text.noPharmaYet}
+                  closeDetailLabel={text.closeDetail}
+                  detailTitleId="pharma-detail-title"
+                  renderDetail={(
+                    item,
+                    _index,
+                    refNumber,
+                    onClose,
+                    showCloseButton,
+                  ) => (
+                    <PharmaDetailPanel
+                      item={item}
+                      text={text}
+                      onClose={onClose}
+                      showCloseButton={showCloseButton}
+                      titleId="pharma-detail-title"
+                      refNumber={refNumber}
+                    />
+                  )}
+                />
+              </div>
             }
             footer={
               <ResultTabFooter

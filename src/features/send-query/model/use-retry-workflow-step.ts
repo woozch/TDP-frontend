@@ -1,8 +1,9 @@
 "use client";
 
-import type { GraphEdge, GraphNode, LiteratureItem, PharmaReportItem, TabKey } from "@contracts/types";
+import type { GraphEdge, GraphNode, LiteratureItem, PharmaReportItem, StreamEvent, TabKey } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
+import { requestJson } from "@/shared/api/http/request";
 
 type RetryStep = Exclude<TabKey, "chat">;
 
@@ -15,11 +16,7 @@ type RetryResponse =
 export function useRetryWorkflowStep() {
   const { language } = useLanguage();
   const activeSession = useChatSessionStore((state) => state.activeSession);
-  const appendAnswerToken = useChatSessionStore((state) => state.appendAnswerToken);
-  const setLiterature = useChatSessionStore((state) => state.setLiterature);
-  const setGraph = useChatSessionStore((state) => state.setGraph);
-  const setPharma = useChatSessionStore((state) => state.setPharma);
-  const completeStream = useChatSessionStore((state) => state.completeStream);
+  const applyStreamEvent = useChatSessionStore((state) => state.applyStreamEvent);
   const setTabStatus = useChatSessionStore((state) => state.setTabStatus);
   const setError = useChatSessionStore((state) => state.setError);
   const clearError = useChatSessionStore((state) => state.clearError);
@@ -33,44 +30,33 @@ export function useRetryWorkflowStep() {
     clearError();
 
     try {
-      const response = await fetch("/api/chat/retry-step", {
+      const payload = await requestJson<RetryResponse>("/api/chat/retry-step", {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          sessionId: activeSession.id,
-          step,
-          language
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: activeSession.id, step, language })
       });
 
-      if (!response.ok) {
-        const detail = await response.text().catch(() => "");
-        throw new Error(
-          `Retry failed (${response.status}${detail ? `: ${detail}` : ""})`
-        );
-      }
+      const now = new Date().toISOString();
+      const base = {
+        seq: 0,
+        sessionId: activeSession.id,
+        timestamp: now
+      } as const;
 
-      const payload = (await response.json()) as RetryResponse;
+      const events: StreamEvent[] =
+        payload.step === "answer"
+          ? [
+              { ...base, type: "answer.delta", payload: { token: payload.token } },
+              { ...base, type: "done", payload: { completedAt: now } }
+            ]
+          : payload.step === "literature"
+            ? [{ ...base, type: "literature.ready", payload: { references: payload.references } }]
+            : payload.step === "graph"
+              ? [{ ...base, type: "graph.ready", payload: { nodes: payload.nodes, edges: payload.edges } }]
+              : [{ ...base, type: "pharma.ready", payload: { items: payload.items } }];
 
-      switch (payload.step) {
-        case "answer":
-          appendAnswerToken(payload.token);
-          completeStream();
-          break;
-        case "literature":
-          setLiterature(payload.references);
-          break;
-        case "graph":
-          setGraph(payload.nodes, payload.edges);
-          break;
-        case "pharma":
-          setPharma(payload.items);
-          break;
-        default:
-          break;
+      for (const event of events) {
+        applyStreamEvent(event);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown retry error";

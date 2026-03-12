@@ -5,6 +5,7 @@ import type { LiteratureItem, ReferenceDetail } from "@contracts/types";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
 import { ReportListWithDetail } from "@/shared/ui/report-list-with-detail";
+import { requestJson } from "@/shared/api/http/request";
 
 interface Props {
   references: LiteratureItem[];
@@ -116,13 +117,9 @@ export function ReferenceList({ references, footerCenter }: Props) {
 
     const loadDetail = async () => {
       try {
-        const response = await fetch(
+        const payload = await requestJson<ReferenceDetail>(
           `/api/references/${selected.id}?language=${encodeURIComponent(language)}`
         );
-        if (!response.ok) {
-          throw new Error(text.loadReferenceFailed);
-        }
-        const payload = (await response.json()) as ReferenceDetail;
         if (!cancelled) {
           setDetail(payload);
         }

@@ -1,40 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useActiveTab } from "@/features/select-tab/model/use-active-tab";
+import { useEffect, useState } from "react";
 import { useLoadSession } from "@/features/load-session/model/use-load-session";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
+import { useMediaQuery } from "@/shared/lib/use-media-query";
 import { LeftSidebar } from "@/widgets/left-sidebar";
-import { ChatWorkspace } from "@/widgets/chat-workspace";
 import { ResultTabs } from "@/widgets/result-tabs";
 import { HeaderSettings } from "@/widgets/header-settings";
 import { AppHeader } from "@/widgets/app-header/ui/app-header";
 
 export function ChatPage() {
-  const { activeTab } = useActiveTab();
   const { language } = useLanguage();
   const text = getUiText(language);
   const { retry } = useLoadSession(true);
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(min-width: 768px)").matches;
-  });
+  const isDesktop = useMediaQuery("(min-width: 768px)", { defaultValue: false });
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(min-width: 768px)").matches;
   });
-
-  // Default sidebar open on desktop (md+), closed on mobile
-  useEffect(() => {
-    const mql = window.matchMedia("(min-width: 768px)");
-    const handler = () => {
-      setIsDesktop(mql.matches);
-    };
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
   const sessions = useChatSessionStore((state) => state.sessions);
   const activeSession = useChatSessionStore((state) => state.activeSession);
   const sessionsLoading = useChatSessionStore((state) => state.sessionsLoading);
@@ -125,11 +110,6 @@ export function ChatPage() {
               <ResultTabs />
             )}
           </div>
-          {activeTab === "chat" ? (
-            <div className="sticky bottom-0 mt-4 shrink-0 border-t border-gray-200 bg-gray-50 pt-4 dark:border-gray-700 dark:bg-gray-950/0">
-              <ChatWorkspace />
-            </div>
-          ) : null}
         </section>
       </div>
     </main>

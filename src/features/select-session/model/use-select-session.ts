@@ -2,6 +2,7 @@
 
 import type { SessionDetail, SessionSummary } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
+import { requestJson } from "@/shared/api/http/request";
 
 export function useSelectSession() {
   const setSessions = useChatSessionStore((state) => state.setSessions);
@@ -12,29 +13,7 @@ export function useSelectSession() {
   const selectSession = async (summary: SessionSummary) => {
     setActiveSessionLoading(true);
     try {
-      const response = await fetch(`/api/sessions/${summary.id}`, {
-        credentials: "include"
-      });
-      if (response.status === 404) {
-        const listRes = await fetch("/api/sessions", { credentials: "include" });
-        if (!listRes.ok) return;
-        const listData = (await listRes.json()) as { sessions: SessionSummary[] };
-        const sessions = listData.sessions ?? [];
-        setSessions(sessions);
-        if (sessions[0]) {
-          const detailRes = await fetch(`/api/sessions/${sessions[0].id}`, {
-            credentials: "include"
-          });
-          if (detailRes.ok) {
-            const detailData = (await detailRes.json()) as { session: SessionDetail };
-            setActiveSession(detailData.session);
-            upsertSessionSummary(sessions[0]);
-          }
-        }
-        return;
-      }
-      if (!response.ok) return;
-      const data = (await response.json()) as { session: SessionDetail };
+      const data = await requestJson<{ session: SessionDetail }>(`/api/sessions/${summary.id}`);
       setActiveSession(data.session);
       upsertSessionSummary({
         id: data.session.id,
@@ -44,6 +23,22 @@ export function useSelectSession() {
         createdAt: data.session.createdAt,
         updatedAt: data.session.updatedAt
       });
+    } catch {
+      // Keep previous behavior: on failure, do not break UX.
+      try {
+        const listData = await requestJson<{ sessions: SessionSummary[] }>("/api/sessions");
+        const sessions = listData.sessions ?? [];
+        setSessions(sessions);
+        if (sessions[0]) {
+          const detailData = await requestJson<{ session: SessionDetail }>(
+            `/api/sessions/${sessions[0].id}`
+          );
+          setActiveSession(detailData.session);
+          upsertSessionSummary(sessions[0]);
+        }
+      } catch {
+        // ignore
+      }
     } finally {
       setActiveSessionLoading(false);
     }

@@ -5,6 +5,7 @@ import type { SessionDetail, SessionSummary } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
+import { requestJson } from "@/shared/api/http/request";
 
 export function useLoadSession(enabled: boolean) {
   const { language } = useLanguage();
@@ -21,22 +22,21 @@ export function useLoadSession(enabled: boolean) {
 
   const bootstrapSession = useCallback(
     async (cancelled: () => boolean) => {
-      const createRes = await fetch("/api/sessions", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ language })
-      });
-      if (cancelled()) return;
-      if (!createRes.ok) {
+      let createData: { session: SessionDetail };
+      try {
+        createData = await requestJson<{ session: SessionDetail }>("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language })
+        });
+      } catch {
+        if (cancelled()) return;
         clearActiveSession();
         setSessions([]);
         setSessionsError(`${text.newReport} failed.`);
         return;
       }
-      const createData = (await createRes.json()) as { session: SessionDetail };
+      if (cancelled()) return;
       if (cancelled()) return;
       const created = createData.session;
       setSessions([
@@ -75,16 +75,16 @@ export function useLoadSession(enabled: boolean) {
         await mocks.mswReady;
       }
 
-      const response = await fetch("/api/sessions", { credentials: "include" });
-      if (cancelled) return;
-      if (!response.ok) {
+      let data: { sessions: SessionSummary[] };
+      try {
+        data = await requestJson<{ sessions: SessionSummary[] }>("/api/sessions");
+      } catch {
+        if (cancelled) return;
         setSessionsLoading(false);
         setSessionsError(`${text.reportHistory} load failed.`);
         setSessions([]);
         return;
       }
-
-      const data = (await response.json()) as { sessions: SessionSummary[] };
       if (cancelled) return;
       const sessions = data.sessions ?? [];
       setSessions(sessions);
@@ -96,38 +96,40 @@ export function useLoadSession(enabled: boolean) {
       }
 
       setActiveSessionLoading(true);
-      const detailRes = await fetch(`/api/sessions/${sessions[0].id}`, {
-        credentials: "include"
-      });
+      let detailData: { session: SessionDetail } | null = null;
+      try {
+        detailData = await requestJson<{ session: SessionDetail }>(`/api/sessions/${sessions[0].id}`);
+      } catch {
+        detailData = null;
+      }
       if (cancelled) return;
 
-      if (detailRes.ok) {
-        const detailData = (await detailRes.json()) as { session: SessionDetail };
+      if (detailData) {
         if (!cancelled) setActiveSession(detailData.session);
-      } else if (detailRes.status === 404) {
-        const retryRes = await fetch("/api/sessions", { credentials: "include" });
-        if (cancelled) return;
-        if (retryRes.ok) {
-          const retryData = (await retryRes.json()) as { sessions: SessionSummary[] };
+      } else {
+        // Keep previous behavior: special-case 404 by re-listing sessions.
+        try {
+          const retryData = await requestJson<{ sessions: SessionSummary[] }>("/api/sessions");
           const fresh = retryData.sessions ?? [];
           if (!cancelled) setSessions(fresh);
           if (!fresh[0]) {
             await bootstrapSession(() => cancelled);
           } else {
-            const retryDetail = await fetch(`/api/sessions/${fresh[0].id}`, {
-              credentials: "include"
-            });
-            if (!cancelled && retryDetail.ok) {
-              const retryDetailData = (await retryDetail.json()) as { session: SessionDetail };
-              setActiveSession(retryDetailData.session);
-            } else if (!cancelled) {
-              clearActiveSession();
+            try {
+              const retryDetailData = await requestJson<{ session: SessionDetail }>(
+                `/api/sessions/${fresh[0].id}`
+              );
+              if (!cancelled) setActiveSession(retryDetailData.session);
+            } catch {
+              if (!cancelled) clearActiveSession();
             }
           }
+        } catch {
+          if (!cancelled) {
+            setSessionsError(`${text.finalReport} load failed.`);
+            clearActiveSession();
+          }
         }
-      } else if (!cancelled) {
-        setSessionsError(`${text.finalReport} load failed.`);
-        clearActiveSession();
       }
       if (!cancelled) setActiveSessionLoading(false);
     };

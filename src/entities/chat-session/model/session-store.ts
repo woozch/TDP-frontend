@@ -9,6 +9,7 @@ import type {
   PharmaReportItem,
   SessionDetail,
   SessionSummary,
+  StreamEvent,
   TabKey,
   TabStatus
 } from "@contracts/types";
@@ -56,6 +57,7 @@ interface ChatSessionStore {
   setSessionTitle: (sessionId: string, title: string, updatedAt?: string) => void;
   setSessionLanguage: (sessionId: string, language: SessionSummary["language"], updatedAt?: string) => void;
   removeMessageFromActiveSession: (messageId: string) => void;
+  applyStreamEvent: (event: StreamEvent) => void;
 }
 
 const defaultTabStatus = (): Record<TabKey, TabStatus> => ({
@@ -108,7 +110,7 @@ const buildSessionState = (session: SessionDetail): SessionState => {
   };
 };
 
-export const useChatSessionStore = create<ChatSessionStore>((set) => ({
+export const useChatSessionStore = create<ChatSessionStore>((set, get) => ({
   sessions: [],
   activeSession: null,
   sessionsLoading: true,
@@ -356,7 +358,35 @@ export const useChatSessionStore = create<ChatSessionStore>((set) => ({
           tabStatus
         }
       };
-    })
+    }),
+  applyStreamEvent: (event) => {
+    const store = get();
+    switch (event.type) {
+      case "answer.delta":
+        store.appendAnswerToken(event.payload.token);
+        break;
+      case "literature.ready":
+        store.setLiterature(event.payload.references);
+        break;
+      case "graph.ready":
+        store.setGraph(event.payload.nodes, event.payload.edges);
+        break;
+      case "pharma.ready":
+        store.setPharma(event.payload.items);
+        break;
+      case "session.updated":
+        store.setSessionTitle(event.sessionId, event.payload.title, event.payload.updatedAt);
+        break;
+      case "done":
+        store.completeStream();
+        break;
+      case "error":
+        store.setError(event.payload.message);
+        break;
+      default:
+        break;
+    }
+  }
 }));
 
 export const getActiveSessionId = () => getStore().activeSession?.id;

@@ -4,6 +4,7 @@ import type { SessionDetail, SessionSummary } from "@contracts/types";
 import { useChatSessionStore } from "@/entities/chat-session/model/session-store";
 import { useLanguage } from "@/shared/language/language-context";
 import { useSelectSession } from "@/features/select-session/model/use-select-session";
+import { requestJson } from "@/shared/api/http/request";
 
 export function useDeleteSession() {
   const { language } = useLanguage();
@@ -31,11 +32,10 @@ export function useDeleteSession() {
       }
 
       // Re-sync from server first so local store cannot drift on edge cases.
-      const listRes = await fetch("/api/sessions", { credentials: "include" });
-      if (listRes.ok) {
-        const listData = (await listRes.json()) as { sessions: SessionSummary[] };
+      try {
+        const listData = await requestJson<{ sessions: SessionSummary[] }>("/api/sessions");
         setSessions(listData.sessions ?? []);
-      } else {
+      } catch {
         removeSession(summary.id);
       }
 
@@ -49,19 +49,13 @@ export function useDeleteSession() {
       }
 
       // Keep one session available to avoid empty-session runtime edge cases.
-      const createRes = await fetch("/api/sessions", {
+      const created = await requestJson<{ session: SessionDetail }>("/api/sessions", {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ language })
       });
-      if (!createRes.ok) {
-        return;
-      }
-
-      const created = (await createRes.json()) as { session: SessionDetail };
       setActiveSession(created.session);
       upsertSessionSummary({
         id: created.session.id,

@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useLanguage } from "@/shared/language/language-context";
 import { getUiText } from "@/shared/i18n/ui-messages";
+import { requestJson } from "@/shared/api/http/request";
 import { UiButton } from "@/shared/ui/button";
 import { UiCard } from "@/shared/ui/card";
 import { AppHeader } from "@/widgets/app-header/ui/app-header";
@@ -44,13 +45,10 @@ export function SignInPage() {
     setIsSigningInWithGoogle(true);
     setGoogleSignInError(null);
     try {
-      const response = await fetch("/api/auth/providers", { method: "GET" });
-      if (!response.ok) {
-        setGoogleSignInError(text.googleSignInFailed);
-        setIsSigningInWithGoogle(false);
-        return;
-      }
-      const providers = (await response.json()) as Record<string, unknown>;
+      const providers = await requestJson<Record<string, unknown>>(
+        "/api/auth/providers",
+        { method: "GET" }
+      );
       if (!providers.google) {
         setGoogleSignInError(text.googleProviderNotConfigured);
         setIsSigningInWithGoogle(false);
